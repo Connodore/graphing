@@ -14,6 +14,10 @@
 // Need an iterator class that when dereferenced just gives the node and not the cost?
 
 
+
+
+
+
 // TAKE AWAY AND THE PAIR AND MAKE IT A STRUCT with a .node and .cost
 
 template<class T, class Cost = size_t>
@@ -25,16 +29,26 @@ struct Node
   //using node_ptr = node<T, Cost>*;
   using cost_type = Cost;
 
+  struct Edge
+  {
+    node_type *toNode;
+    cost_type cost;
+  };
+
   // Wrap this pair into a more useable struct?
-  using mapped_type = std::pair<node_type*, cost_type>;
+  // using mapped_type = std::pair<node_type*, cost_type>;
+  using mapped_type = Edge;
 
   using value_type = std::pair<key_type, mapped_type>;
 
   // custom iterator type should be implemented
   using iterator = typename std::unordered_map<key_type, mapped_type>::iterator;
 
+
+
+
+
   T val;
-  //Cost cost; // This was a temp variable, used only be algorithms
 
   std::unordered_map<key_type, mapped_type> adj;
 
@@ -59,7 +73,7 @@ struct Node
     // return adj[key].first WHY IN THE WORLD WILL THIS NOT WORK PROPERLY
 
     // return *(adj.find(key)->second.first);
-    return *(adj[key].first);
+    return *(adj[key].toNode);
   }
 
   // Change return type to iterator and follow std:: template

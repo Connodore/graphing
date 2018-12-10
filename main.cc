@@ -30,7 +30,7 @@ main()
 
 
     for (auto &[id, node] : g)
-        cout << node.first->val << std::endl;
+        cout << node.toNode->val << std::endl;
 
     /*
         | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
@@ -91,10 +91,10 @@ printg(GraphIt first, GraphIt last)
 {
     std::for_each(first, last, [](auto& k)
     {
-        cerr << "Node: " << k.second.first->val << std::endl;
-        std::for_each(k.second.first->begin(), k.second.first->end(), [=](auto& i)
+        cerr << "Node: " << k.second.toNode->val << std::endl;
+        std::for_each(k.second.toNode->begin(), k.second.toNode->end(), [=](auto& i)
         {
-            cerr << "    Adj: " << i.second.first->val << "    Cost: " << i.second.second << std::endl;
+            cerr << "    Adj: " << i.second.toNode->val << "    Cost: " << i.second.cost << std::endl;
         });
     });
 }

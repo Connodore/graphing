@@ -34,15 +34,8 @@ public:
     // The default value should be move constructed? for every node to save space?
     Graph(size_type size = 0)
     {
-        // Is this cast okay? Should I use static_cast? (probably should if possible)
-        // std::generate_n(std::inserter(m_node.adj, m_node.adj.end()), size, [key = (size_type) 0]() mutable
-        // {
-        //     return std::pair{key++, std::pair{node_type{}, (cost_type) 0}};
-        // });
-        std::generate_n(std::inserter(m_node.adj, m_node.adj.end()), size, [this]()
-        {
-            return std::pair{m_curr_id++, std::pair{new node_type{}, (cost_type) 0}};
-        });
+        for (size_type s = 0; s < size; ++s)
+            insert();
     }
 
     // This does not actually make a copy
@@ -59,11 +52,17 @@ public:
 
     // Change return type
     // Should be able to insert with at least a default val
+    // void
+    // // insert()
+    // insert(T val)
+    // {
+    //     m_node.insert({m_curr_id++, std::pair{new node_type{val}, (cost_type) 0}});
+    // }
+
     void
-    // insert()
-    insert(T val)
+    insert(T val = T{})
     {
-        m_node.insert({m_curr_id++, std::pair{new node_type{val}, (cost_type) 0}});
+        m_node.insert({m_curr_id++, {new node_type{val}, (cost_type) 0}});
     }
 
     // If node does not exist a new one will be created, I think

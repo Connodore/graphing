@@ -43,20 +43,20 @@ floyd(Graph<T>& g)
         {
             std::for_each(first, last, [=, &copy_g](auto &j)
             {
-                auto i_val = i.second.first->val, j_val = j.second.first->val, k_val = k.second.first->val;
+                auto i_val = i.second.toNode->val, j_val = j.second.toNode->val, k_val = k.second.toNode->val;
 
-                if (auto it_ik = i.second.first->find(k_val); it_ik != i.second.first->end())
-                    if (auto it_kj = k.second.first->find(j_val); it_kj != k.second.first->end())
+                if (auto it_ik = i.second.toNode->find(k_val); it_ik != i.second.toNode->end())
+                    if (auto it_kj = k.second.toNode->find(j_val); it_kj != k.second.toNode->end())
                     {
-                        size_t  cost = it_ik->second.second + it_kj->second.second;
-                        if (i.second.first->find(j_val) != i.second.first->end())
+                        size_t  cost = it_ik->second.cost + it_kj->second.cost;
+                        if (i.second.toNode->find(j_val) != i.second.toNode->end())
                         {
-                            if (auto it_ij = copy_g[i_val].find(j_val); it_ij != copy_g[i_val].end() && it_ij->second.second > cost)
-                                it_ij->second.second = cost;
+                            if (auto it_ij = copy_g[i_val].find(j_val); it_ij != copy_g[i_val].end() && it_ij->second.cost > cost)
+                                it_ij->second.cost = cost;
                         }
                         else
                         {
-                            copy_g[i_val].insert({j_val, {j.second.first, cost}});
+                            copy_g[i_val].insert({j_val, {j.second.toNode, cost}});
                         }
                     }
             });
