@@ -29,23 +29,19 @@ main()
     auto n6 = g.insert(6);
     auto n7 = g.insert(7);
 
-    g.insert(n0, {{n2, 2}, {n3, 5}});
-    g.insert(n1, {{n2, 9}});
-    g.insert(n2, {{n1, 5}, {n5, 2}, {n6, 7}});
-    g.insert(n3, {{n7, 9}});
-    g.insert(n4, {{n6, 4}});
-    g.insert(n5, {{n6, 3}});
-    g.insert(n6, {{n5, 3}});
+    g.insert(n0, {n1, 7});
+    g.insert(n1, {n2, 9});
+    g.insert(n2, {{n0, 8}, {n4, 7}, {n6, 6}});
+    g.insert(n3, {{n1, 1}, {n5, 3}, {n7, 4}});
+    g.insert(n4, {n2, 8});
+    g.insert(n5, {n3, 9});
+    g.insert(n6, {{n2, 7}, {n4, 7}, {n5, 2}});
+    g.insert(n7, {n6, 3});
 
     cerr << "Before Floyd\n" << std::endl;
     printg(g.begin(), g.end());
     cerr << std::endl;
 
-    auto it1 = g.find(n1->first);
-    auto it2 = g.find(n2->first);
-    auto it = g.find(it1, it2);
-
-    cerr << it->first->val << std::endl;
 
     auto fg = floyd(g);
     // auto fg = floyd(g.begin(), g.end());
@@ -53,7 +49,7 @@ main()
     cerr << "After Floyd\n" << std::endl;
     printg(fg.begin(), fg.end());
 
-    printg(g.begin(), g.end());
+    // printg(g.begin(), g.end());
 
     return EXIT_SUCCESS;
 }
