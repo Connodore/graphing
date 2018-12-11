@@ -4,6 +4,8 @@
 # Assignment : 7 - It's All in the Game (Cellular Automata, Grid Computations)
 # Description: Makefile
 
+# It'd be nice to have a more generic makefile, also my .gitignore has to ignore 'main' due to the executable build rules, it would be nice to have that removed
+
 ########################################################
 # Variable definitions
 ########################################################
