@@ -26,45 +26,79 @@ using std::cerr;
 
 // The new graph we are creating must have the initial connections or I have to rework part of my algorithm
 
+// What would it mean for a graph to be passed with iterators that excluded nodes that were on the adj list of some of the nodes in the range?
+
+// Need to remove the auto return type, ideally we should accept an out_iterator as an argument just like the STL algorithms do
+
 // template<class T, class GraphIt>
-template<class T>
-Graph<T>
+// template<class T>
+// Graph<T>
 // floyd(GraphIt first, GraphIt last)
 // If this sig is kept we will want const
-floyd(Graph<T>& g)
+// floyd(Graph<T>& g)
 // floyd(GraphIt first, GraphIt last, GraphIt d_first)
+
+// Not using range algorithm because the range constructor is hard to implement, should switch back to range algo once it's implemented
+// template<class GraphIt>
+// auto
+// floyd(GraphIt first, GraphIt last)
+
+// Currently modifies g (yes, I know it says its const)
+template<class T>
+Graph<T>
+floyd(const Graph<T> &g)
 {
-    auto first = g.begin(), last = g.end();
-    Graph<int> copy_g{g};
+    // auto first = g.begin(), last = g.end();
 
-    std::for_each(first, last, [=, &copy_g](auto &k)
+    // Remember this graph type is hardcoded at the moment!
+    // Graph<int> fg{first, last};
+
+    Graph<T> fg{g};
+
+    std::for_each(fg.begin(), fg.end(), [&](auto &k)
     {
-        std::for_each(first, last, [=, &copy_g](auto &i)
+        std::for_each(fg.begin(), fg.end(), [&](auto &i)
         {
-            std::for_each(first, last, [=, &copy_g](auto &j)
+            std::for_each(fg.begin(), fg.end(), [&](auto &j)
             {
-                auto i_val = i.second.toNode->val, j_val = j.second.toNode->val, k_val = k.second.toNode->val;
+                // auto i_val = i.first->val, j_val = j.first->val, k_val = k.first->val;
 
-                if (auto it_ik = i.second.toNode->find(k_val); it_ik != i.second.toNode->end())
-                    if (auto it_kj = k.second.toNode->find(j_val); it_kj != k.second.toNode->end())
+                // if (auto ik = i.first->find(k_val); ik != i.first->end())
+                //     if (auto kj = k.first->find(j_val); kj != k.first->end())
+                //     {
+                //         size_t cost = ik->second + kj->second;
+                //         if (i.first->find(j_val) != i.first->end())
+                //         {
+                //             if (auto it_ij = copy_g[i_val].find(j_val); it_ij != copy_g[i_val].end() && it_ij->second.cost > cost)
+                //                 it_ij->second.cost = cost;
+                //         }
+                //         else
+                //         {
+                //             copy_g[i_val].insert({j_val, {j.second.toNode, cost}});
+                //         }
+                //     }
+
+
+
+                if (auto ik = fg.find(fg.find(i.first), fg.find(k.first)); ik != fg.end())
+                    if (auto kj = fg.find(fg.find(k.first), fg.find(j.first)); kj != fg.end())
                     {
-                        size_t  cost = it_ik->second.cost + it_kj->second.cost;
-                        if (i.second.toNode->find(j_val) != i.second.toNode->end())
+                        // Ideally I want to use the Graph's cost_type here
+                        size_t cost = ik->second + kj->second;
+                        if (fg.find(fg.find(i.first), fg.find(j.first)) != fg.end())
                         {
-                            if (auto it_ij = copy_g[i_val].find(j_val); it_ij != copy_g[i_val].end() && it_ij->second.cost > cost)
-                                it_ij->second.cost = cost;
+                            if (auto ij = fg.find(fg.find(i.first), fg.find(j.first)); ij != fg.end() && ij->second > cost)
+                                ij->second = cost;
                         }
                         else
-                        {
-                            copy_g[i_val].insert({j_val, {j.second.toNode, cost}});
-                        }
+                            fg.insert(fg.find(i.first), {fg.find(j.first), cost});
                     }
             });
         });
 
     });
 
-    return copy_g;
+    return fg;
 }
 
 #endif
