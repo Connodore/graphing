@@ -6,9 +6,10 @@
 #include "Floyd.hpp"
 #include "Graph.hpp"
 
+#include <algorithm>
+#include <unordered_map>
 
 using std::cerr;
-using std::cout;
 
 template<class GraphIt>
 void
@@ -17,70 +18,42 @@ printg(GraphIt first, GraphIt last);
 int
 main()
 {
-    Graph<int> g{8};
+    Graph<int> g{};
 
-    g[0].val = 0;
-    g[1].val = 1;
-    g[2].val = 2;
-    g[3].val = 3;
-    g[4].val = 4;
-    g[5].val = 5;
-    g[6].val = 6;
-    g[7].val = 7;
+    auto n0 = g.insert(0);
+    auto n1 = g.insert(1);
+    auto n2 = g.insert(2);
+    auto n3 = g.insert(3);
+    auto n4 = g.insert(4);
+    auto n5 = g.insert(5);
+    auto n6 = g.insert(6);
+    auto n7 = g.insert(7);
 
+    g.insert(n0, {{n2, 2}, {n3, 5}});
+    g.insert(n1, {{n2, 9}});
+    g.insert(n2, {{n1, 5}, {n5, 2}, {n6, 7}});
+    g.insert(n3, {{n7, 9}});
+    g.insert(n4, {{n6, 4}});
+    g.insert(n5, {{n6, 3}});
+    g.insert(n6, {{n5, 3}});
 
-    for (auto &[id, node] : g)
-        cout << node.toNode->val << std::endl;
-
-    /*
-        | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
-    ---------------------------------
-    0 |
-    ---------------------------------
-    1 |
-    ---------------------------------
-    2 |
-    ---------------------------------
-
-    ---------------------------------
-
-    ---------------------------------
-    */
-
-
-    g[0].adj = {{2, {&g[2], 2}}, {3, {&g[3], 5}}};
-    g[1].adj = {{2, {&g[2], 9}}};
-    g[2].adj = {{1, {&g[1], 5}}, {5, {&g[5], 2}}, {6, {&g[6], 7}}};
-    g[3].adj = {{7, {&g[7], 9}}};
-    g[4].adj = {{6, {&g[6], 4}}};
-    g[5].adj = {{6, {&g[6], 3}}};
-    g[6].adj = {{5, {&g[5], 3}}};
-    g[7].adj = {};
-
-
-    //   g[7].insert({4, {&g[4], 3}});
-
-    // for (auto [key, p] : g[0].adj)
-    //   cout << p.second << std::endl;
-
-    // for (auto &[id, node] : g)
-    //   cout << node.val << std::endl;
-
-    // cout << "hi" << g[0][3][0][3].val << std::endl;
-
-    // g[0][3].val = 33;
-    // cout << "Real: " << g[3].val << std::endl;
-    // cout << "Ref : " << g[0][3].val << std::endl;
-
-    cout << "Before Floyd\n" << std::endl;
+    cerr << "Before Floyd\n" << std::endl;
     printg(g.begin(), g.end());
-    cout << std::endl;
+    cerr << std::endl;
 
-    // auto fg = floyd<int>(g.begin(), g.end());
+    auto it1 = g.find(n1->first);
+    auto it2 = g.find(n2->first);
+    auto it = g.find(it1, it2);
+
+    cerr << it->first->val << std::endl;
+
     auto fg = floyd(g);
+    // auto fg = floyd(g.begin(), g.end());
 
-    cout << "After Floyd\n" << std::endl;
+    cerr << "After Floyd\n" << std::endl;
     printg(fg.begin(), fg.end());
+
+    printg(g.begin(), g.end());
 
     return EXIT_SUCCESS;
 }
@@ -91,10 +64,10 @@ printg(GraphIt first, GraphIt last)
 {
     std::for_each(first, last, [](auto& k)
     {
-        cerr << "Node: " << k.second.toNode->val << std::endl;
-        std::for_each(k.second.toNode->begin(), k.second.toNode->end(), [=](auto& i)
+        cerr << "Node: " << k.first->val << "    " << k.first << std::endl;
+        std::for_each(k.first->begin(), k.first->end(), [=](auto& i)
         {
-            cerr << "    Adj: " << i.second.toNode->val << "    Cost: " << i.second.cost << std::endl;
+            cerr << "    Adj: " << i.first->val << "    Cost: " << i.second << "    " << i.first << std::endl;
         });
     });
 }
