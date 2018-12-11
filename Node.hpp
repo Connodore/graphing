@@ -52,7 +52,7 @@ struct Node
 
   // Header node stores a default T, kind of wasted space and hopefully it has a default value
   T val{};
-  std::unordered_map<key_type, mapped_type> adj;
+  std::unordered_map<key_type, mapped_type> adj{};
 
   // Probably very unsafe, probably should default construct val but I don't want to waste space
   Node()
