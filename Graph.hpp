@@ -71,13 +71,18 @@ public:
     {}
 
 
+    // NEXT UP!!! IMPLEMENT A WORKING RANGE CONSTRUCTOR AND HAVE THE COPY CONSTRUCTOR DELAGATE TO THAT
+
+
+
     // // This is hard to implement
-    // template<class InputIt>
-    // Graph(InputIt first, InputIt last)
+    // Currently only supports graph iterators, ideally want to support generic iterators (probably InputIt?)
+    // template<class GraphIt>
+    // Graph(GraphIt first, GraphIt last)
     // {
     //     std::for_each(first, last, [&](const auto& other)
     //     {
-    //         cerr << "og"other.first->val << std::endl;
+    //         // cerr << "og"other.first->val << std::endl;
     //         auto it = insert(other.first->val);
     //     });
     // }
