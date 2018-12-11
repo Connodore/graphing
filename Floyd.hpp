@@ -48,8 +48,6 @@ template<class T>
 Graph<T>
 floyd(const Graph<T> &g)
 {
-    // auto first = g.begin(), last = g.end();
-
     // Remember this graph type is hardcoded at the moment!
     // Graph<int> fg{first, last};
 
@@ -61,37 +59,18 @@ floyd(const Graph<T> &g)
         {
             std::for_each(fg.begin(), fg.end(), [&](auto &j)
             {
-                // auto i_val = i.first->val, j_val = j.first->val, k_val = k.first->val;
-
-                // if (auto ik = i.first->find(k_val); ik != i.first->end())
-                //     if (auto kj = k.first->find(j_val); kj != k.first->end())
-                //     {
-                //         size_t cost = ik->second + kj->second;
-                //         if (i.first->find(j_val) != i.first->end())
-                //         {
-                //             if (auto it_ij = copy_g[i_val].find(j_val); it_ij != copy_g[i_val].end() && it_ij->second.cost > cost)
-                //                 it_ij->second.cost = cost;
-                //         }
-                //         else
-                //         {
-                //             copy_g[i_val].insert({j_val, {j.second.toNode, cost}});
-                //         }
-                //     }
-
-
-
-                if (auto ik = fg.find(fg.find(i.first), fg.find(k.first)); ik != fg.end())
-                    if (auto kj = fg.find(fg.find(k.first), fg.find(j.first)); kj != fg.end())
+                if (auto ik = fg.find(i.first->val, k.first->val); ik != fg.end())
+                    if (auto kj = fg.find(k.first->val, j.first->val); kj != fg.end())
                     {
                         // Ideally I want to use the Graph's cost_type here
                         size_t cost = ik->second + kj->second;
-                        if (fg.find(fg.find(i.first), fg.find(j.first)) != fg.end())
+                        if (auto ij = fg.find(i.first->val, j.first->val); ij != fg.end())
                         {
-                            if (auto ij = fg.find(fg.find(i.first), fg.find(j.first)); ij != fg.end() && ij->second > cost)
+                            if (ij != fg.end() && ij->second > cost)
                                 ij->second = cost;
                         }
                         else
-                            fg.insert(fg.find(i.first), {fg.find(j.first), cost});
+                            fg.insert(i.first->val, {j.first->val, cost});
                     }
             });
         });
