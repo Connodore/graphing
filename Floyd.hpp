@@ -43,41 +43,45 @@ using std::cerr;
 // auto
 // floyd(GraphIt first, GraphIt last)
 
+// To use a signature that takes 3 iterators, first, last, and d_first, I need to have custom iterators for the graph implemented, because they are not, to allow partitioning of the graph I will take iterators that are the range of the graph passed in that should be gone over. THIS SHOULD NOT BE IN THE ACTUAL API
+
 // Currently modifies g (yes, I know it says its const)
-template<class T>
-Graph<T>
-floyd(const Graph<T> &g)
+template<class T, class GraphIt>
+void
+// Graph<T>
+// floyd(const Graph<T> &g)
+floyd(Graph<T> &g, GraphIt first, GraphIt last)
 {
     // Remember this graph type is hardcoded at the moment!
-    // Graph<int> fg{first, last};
+    // Graph<int> g{first, last};
 
-    Graph<T> fg{g};
+    // Graph<T> g{g};
 
-    std::for_each(fg.begin(), fg.end(), [&](auto &k)
+    std::for_each(first, last, [&](auto &k)
     {
-        std::for_each(fg.begin(), fg.end(), [&](auto &i)
+        std::for_each(first, last, [&](auto &i)
         {
-            std::for_each(fg.begin(), fg.end(), [&](auto &j)
+            std::for_each(first, last, [&](auto &j)
             {
-                if (auto ik = fg.find(i.first->val, k.first->val); ik != fg.end())
-                    if (auto kj = fg.find(k.first->val, j.first->val); kj != fg.end())
+                if (auto ik = g.find(i.first->val, k.first->val); ik != g.end())
+                    if (auto kj = g.find(k.first->val, j.first->val); kj != g.end())
                     {
                         // Ideally I want to use the Graph's cost_type here
                         size_t cost = ik->second + kj->second;
-                        if (auto ij = fg.find(i.first->val, j.first->val); ij != fg.end())
+                        if (auto ij = g.find(i.first->val, j.first->val); ij != g.end())
                         {
-                            if (ij != fg.end() && ij->second > cost)
+                            if (ij != g.end() && ij->second > cost)
                                 ij->second = cost;
                         }
                         else
-                            fg.insert(i.first->val, {j.first->val, cost});
+                            g.insert(i.first->val, {j.first->val, cost});
                     }
             });
         });
 
     });
 
-    return fg;
+    // return g;
 }
 
 #endif
