@@ -12,9 +12,18 @@ using std::cerr;
 
 #include "Node.hpp"
 
+// My graph library should be called Graph++
+
+// If the user specifies a unique cost type they must have certain operators implemnted, I think + and +=?
+
+// We are currently keeping double the space needed because both Graph's lookup table and the node hold the same value
+
+// Type T better be hashable and copyable
+
 // Could inherit from unordered_map? Could override functions I do not want to offer and hide/delete them
 
 // REMEMBER! GRAPH VALUES MUST BE UNIQUE (for this version of the implementation)
+// Data values still need to be unique!! For the meantime
 
 // This id system needs to be kind of smart, if a key gets removed that value will probably have to be reused. Unless the floyd algorithm is written a different way or the operator[] is properly implemented to insert a node if one did not already exist, because the floyd algorithm relies on the idea that the keys are the same
 
@@ -58,7 +67,7 @@ public:
 
     // This does not actually make a copy
     Graph(const Graph& other)
-    : m_node(other.m_node)
+    : m_data(other.m_data), m_node(other.m_node)
     {}
 
 
@@ -102,17 +111,45 @@ public:
     // }
 
     // This will insert repeats of the same val!! This is not unique, is that okay?
+
     iterator
     insert(T val)
     {
-        return m_node.insert({new node_type{val}, (cost_type) 0});
+        m_data.insert({val, new node_type{val}});
+        return m_node.insert({m_data[val], cost_type{}});
     }
 
     iterator
     insert(T val, std::pair<iterator, cost_type> adj)
     {
-        insert(val, {adj});
+        return insert(val, {adj});
     }
+
+    // This currently cannot handle adding links if the type T does not exist in m_data, this should probably be improved
+    iterator
+    insert(T val, std::pair<T, cost_type> adj)
+    {
+        return insert(val, {adj});
+    }
+
+    iterator
+    insert(T val, std::initializer_list<std::pair<iterator, cost_type>> init)
+    {
+        return insert(insert(val), init);
+    }
+
+    // If a value in the adj list does not yet exist, this won't work, should it auto insert values that don't yet exist in the graph? I think maybe it should
+    iterator
+    insert(T val, std::initializer_list<std::pair<T, cost_type>> init)
+    {
+        auto it = insert(val);
+        for (auto [adj_val, cost] : init)
+            it->first->insert({find(adj_val)->first, cost});
+        return it;
+    }
+
+    // I think the only combo of insert not implemented is an iterator pos with a pair or init list of type T and cost
+
 
     iterator
     insert(iterator pos, std::pair<iterator, cost_type> adj)
@@ -123,11 +160,7 @@ public:
     // At the moment there is no way to make connections to non-existing node, which would then create additional new nodes (it might be good not to include this feature)
     // What if this val already exists?
     // cost_type than iterator or vice versa?
-    iterator
-    insert(T val, std::initializer_list<std::pair<iterator, cost_type>> init)
-    {
-        return insert(insert(val), init);
-    }
+
 
     iterator
     insert(iterator pos, std::initializer_list<std::pair<iterator, cost_type>> init)
@@ -147,13 +180,25 @@ public:
 
 
     // This is quite inefficient (O(N)), ideally we should hash type T and get constant time find but that requires a combined implemntation to use type T and to use pointers to nodes
+    // iterator
+    // find(const T& val)
+    // {
+    //     return std::find_if(begin(), end(), [&](const auto& n)
+    //     {
+    //         return n.first->val == val;
+    //     });
+    // }
+
     iterator
     find(const T& val)
     {
-        return std::find_if(begin(), end(), [&](const auto& n)
-        {
-            return n.first->val == val;
-        });
+        return m_node.find(m_data[val]);
+    }
+
+    const_iterator
+    find(const T& val) const
+    {
+        return m_node.find(m_data[val]);
     }
 
 
@@ -170,6 +215,20 @@ public:
     {
         return m_node.find(key);
     }
+
+
+    iterator
+    find(const T& from, const T& to)
+    {
+        return find(find(from), find(to));
+    }
+
+    const_iterator
+    find(const T& from, const T& to) const
+    {
+        return find(find(from), find(to));
+    }
+
 
     // Find an edge between two nodes
     iterator
@@ -237,6 +296,7 @@ private:
 
     // std::unordered_map<key_type, node_type*> m_nodes{};
 
+    std::unordered_map<key_type, node_type*> m_data{};
     node_type m_node{};
     // size_t m_size{};
 };
