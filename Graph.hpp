@@ -34,10 +34,10 @@ using std::cerr;
 // Ultimately, a graph should be able to be constructed from nothing and when a new adj node is used that wasn't in the graph it gets automatically added
 
 //operator[] can be overloaded and uses {} in call
-template<class T, class Cost = size_t>
+template <class T, class Cost = size_t>
 class Graph
 {
-public:
+  public:
     using key_type = T;
     using node_type = Node<T>;
     using size_type = size_t;
@@ -66,14 +66,12 @@ public:
     // {}
 
     // This does not actually make a copy
-    Graph(const Graph& other)
-    : m_data(other.m_data), m_node(other.m_node)
-    {}
-
+    Graph(const Graph &other)
+        : m_data(other.m_data), m_node(other.m_node)
+    {
+    }
 
     // NEXT UP!!! IMPLEMENT A WORKING RANGE CONSTRUCTOR AND HAVE THE COPY CONSTRUCTOR DELAGATE TO THAT
-
-
 
     // // This is hard to implement
     // Currently only supports graph iterators, ideally want to support generic iterators (probably InputIt?)
@@ -155,7 +153,6 @@ public:
 
     // I think the only combo of insert not implemented is an iterator pos with a pair or init list of type T and cost
 
-
     iterator
     insert(iterator pos, std::pair<iterator, cost_type> adj)
     {
@@ -165,7 +162,6 @@ public:
     // At the moment there is no way to make connections to non-existing node, which would then create additional new nodes (it might be good not to include this feature)
     // What if this val already exists?
     // cost_type than iterator or vice versa?
-
 
     iterator
     insert(iterator pos, std::initializer_list<std::pair<iterator, cost_type>> init)
@@ -183,7 +179,6 @@ public:
     //     return m_node.find(key);
     // }
 
-
     // This is quite inefficient (O(N)), ideally we should hash type T and get constant time find but that requires a combined implemntation to use type T and to use pointers to nodes
     // iterator
     // find(const T& val)
@@ -195,45 +190,42 @@ public:
     // }
 
     iterator
-    find(const T& val)
+    find(const T &val)
     {
         return m_node.find(m_data[val]);
     }
 
     const_iterator
-    find(const T& val) const
+    find(const T &val) const
     {
         return m_node.find(m_data[val]);
     }
-
 
     // This is literally taking node addresses, this is not the best way to do this but is a reasonable workaround for the moment
     // Ideally this should take a type T
     iterator
-    find(node_type* key)
+    find(node_type *key)
     {
         return m_node.find(key);
     }
 
     const_iterator
-    find(node_type* key) const
+    find(node_type *key) const
     {
         return m_node.find(key);
     }
-
 
     iterator
-    find(const T& from, const T& to)
+    find(const T &from, const T &to)
     {
         return find(find(from), find(to));
     }
 
     const_iterator
-    find(const T& from, const T& to) const
+    find(const T &from, const T &to) const
     {
         return find(find(from), find(to));
     }
-
 
     // Find an edge between two nodes
     iterator
@@ -276,6 +268,34 @@ public:
         return m_node.begin();
     }
 
+    // Begin of adj of a node
+    iterator
+    begin(const T &val)
+    {
+        return find(val)->first->begin();
+    }
+
+    // Begin of adj of a node
+    const_iterator
+    begin(const T &val) const
+    {
+        return find(val)->first->begin();
+    }
+
+    // Begin of adj of a node
+    iterator
+    begin(iterator pos)
+    {
+        return find(pos)->first->begin();
+    }
+
+    // Begin of adj of a node
+    const_iterator
+    begin(const_iterator pos) const
+    {
+        return find(pos)->first->begin();
+    }
+
     iterator
     end()
     {
@@ -288,23 +308,66 @@ public:
         return m_node.end();
     }
 
+    // End of adj of a node
+    iterator
+    end(const T &val)
+    {
+        return find(val)->first->end();
+    }
+
+    // End of adj of a node
+    iterator
+    end(const T &val) const
+    {
+        return find(val)->first->end();
+    }
+
+    // End of adj of a node
+    iterator
+    end(iterator pos)
+    {
+        return find(pos)->first->end();
+    }
+
+    // End of adj of a node
+    const_iterator
+    end(const_iterator pos) const
+    {
+        return find(pos)->first->end();
+    }
+
     size_type
     size() const
     {
         return m_node.size();
     }
 
-private:
+  private:
     // std::unordered_map<size_type, node_type> m_data{};
 
     // size_t m_curr_id = 0;
 
     // std::unordered_map<key_type, node_type*> m_nodes{};
 
-    std::unordered_map<key_type, node_type*> m_data{};
+    std::unordered_map<key_type, node_type *> m_data{};
     node_type m_node{};
     // size_t m_size{};
 };
 
+template <class T, class Cost>
+bool operator==(Graph<T, Cost> &lhs, Graph<T, Cost> &rhs)
+{
+    for (auto &n : lhs)
+        for (auto &adj : *(n.first))
+            if (auto edge = rhs.find(n.first->val, adj.first->val); edge != rhs.end())
+            {
+                if (adj.second != edge->second)
+                    return false;
+            }
+            else
+                return false;
+
+    return true;
+}
 
 #endif
