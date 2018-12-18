@@ -7,367 +7,300 @@
 #include <unordered_map>
 #include <utility>
 
+#include <functional>
 #include <iostream>
 using std::cerr;
 
 #include "Node.hpp"
 
+// TODO setup nonconst versions of methods to rely on const ones, or vice versa (whichever is the proper way, it is outlined in my Effective C++ book)
+
+// Remember to make it very clear that this graph requires unique values
+
 // My graph library should be called Graph++
 
 // If the user specifies a unique cost type they must have certain operators implemnted, I think + and +=?
 
-// We are currently keeping double the space needed because both Graph's lookup table and the node hold the same value
-
 // Type T better be hashable and copyable
 
-// Could inherit from unordered_map? Could override functions I do not want to offer and hide/delete them
-
 // REMEMBER! GRAPH VALUES MUST BE UNIQUE (for this version of the implementation)
-// Data values still need to be unique!! For the meantime
 
-// This id system needs to be kind of smart, if a key gets removed that value will probably have to be reused. Unless the floyd algorithm is written a different way or the operator[] is properly implemented to insert a node if one did not already exist, because the floyd algorithm relies on the idea that the keys are the same
+// FIXME if we are allow the u_map to be accessible it needs to be const, that cannot just be modified whenever. Parts of my current implementation do rely on this functionality so they will need to be updated (I think it should be pretty easy to convert over though). This needs to be const in the iterator but cannot be const within the class
 
-// Should nest node class and Graph needs to keep track of an id counter that way an easier insert function not requiring an id
-
-// A graph is really just a node with multiple 0 weight connections, I don't like wasting space to store 0...
-
-// Ultimately, a graph should be able to be constructed from nothing and when a new adj node is used that wasn't in the graph it gets automatically added
-
-//operator[] can be overloaded and uses {} in call
 template <class T, class Cost = size_t>
 class Graph
 {
-  public:
-    using key_type = T;
-    using node_type = Node<T>;
-    using size_type = size_t;
-    using cost_type = Cost;
-    // Probably should define a const too
-    // Should probably have a more readable def than being an unordered map
-    // Why typename?
-    // using iterator = typename std::unordered_map<key_type, node_type*>::iterator;
-    using iterator = typename node_type::iterator;
-    using const_iterator = typename node_type::const_iterator;
+public:
+  using size_type = size_t;
+  // Probably should define a const too
+  // Should probably have a more readable def than being an unordered map
+  // Why typename?
+  // using iterator = typename std::unordered_map<key_type, node_type*>::iterator;
+  // using iterator = typename node_type::iterator;
+  // using const_iterator = typename node_type::const_iterator;
 
-    // Add init list constructor that just takes initial valuessc
+private:
+  // using adj_type = std::unordered_map<const T *, Cost>;
+  using adj_type = std::unordered_map<std::reference_wrapper<const T>, Cost, std::hash<T>>;
+  using graph_type = std::unordered_map<T, adj_type>;
 
-    // The default value should be move constructed? for every node to save space?
+public:
+  using iterator = typename graph_type::iterator;
+  using local_iterator = typename adj_type::iterator;
 
-    // A size constructor does not make much sense for a container that needs unique values
-    Graph(/*size_type size = 0*/)
-    {
-        // for (size_type s = 0; s < size; ++s)
-        //     insert();
-    }
+public:
+  // Add init list constructor that just takes initial valuessc
 
-    // This does not actually make a copy
-    // Graph(const Graph& other)
-    // : Graph(other.begin(), other.end())
-    // {}
+  // The default value should be move constructed? for every node to save space?
 
-    // This does not actually make a copy
-    Graph(const Graph &other)
-        : m_data(other.m_data), m_node(other.m_node)
-    {
-    }
+  // A size constructor does not make much sense for a container that needs unique values
+  Graph(/*size_type size = 0*/)
+  {
+    // for (size_type s = 0; s < size; ++s)
+    //     insert();
+  }
 
-    // NEXT UP!!! IMPLEMENT A WORKING RANGE CONSTRUCTOR AND HAVE THE COPY CONSTRUCTOR DELAGATE TO THAT
+  // This does not actually make a copy
+  // Graph(const Graph& other)
+  // : Graph(other.begin(), other.end())
+  // {}
 
-    // // This is hard to implement
-    // Currently only supports graph iterators, ideally want to support generic iterators (probably InputIt?)
-    // template<class GraphIt>
-    // Graph(GraphIt first, GraphIt last)
-    // {
-    //     std::for_each(first, last, [&](const auto& other)
-    //     {
-    //         // cerr << "og"other.first->val << std::endl;
-    //         auto it = insert(other.first->val);
-    //     });
-    // }
+  // This does not actually make a copy
+  // Graph(const Graph &other)
+  //     : m_data(other.m_data), m_node(other.m_node)
+  // {
+  // }
 
-    ~Graph()
-    {
-        // delete nodes
-    }
+  // // This is hard to implement
+  // Currently only supports graph iterators, ideally want to support generic iterators (probably InputIt?)
+  // template<class GraphIt>
+  // Graph(GraphIt first, GraphIt last)
+  // {
+  //     std::for_each(first, last, [&](const auto& other)
+  //     {
+  //         // cerr << "og"other.first->val << std::endl;
+  //         auto it = insert(other.first->val);
+  //     });
+  // }
 
-    // Change return type
-    // Should be able to insert with at least a default val
-    // void
-    // // insert()
-    // insert(T val)
-    // {
-    //     m_node.insert({m_curr_id++, std::pair{new node_type{val}, (cost_type) 0}});
-    // }
+  /******************************/
 
-    // Since the graph should be unqiue a default value is not a good idea
-    // void
-    // insert(T val = T{})
-    // {
-    //     m_node.insert({new node_type{val}, (cost_type) 0});
-    // }
+  std::pair<iterator, bool>
+  insert(T val)
+  {
+    return m_nodes.emplace(val, adj_type{});
+  }
 
-    // Is this the return type I want?
-    // std::pair<iterator, bool>
-    // insert(T val)
-    // {
-    //     return m_nodes.insert({val, new node_type{}});
-    // }
+  std::pair<local_iterator, bool>
+  insert(T val, const std::pair<T, Cost> &adj)
+  {
+    auto [it, _0] = insert(val);
+    auto [adj_it, _1] = insert(adj.first);
 
-    // This will insert repeats of the same val!! This is not unique, is that okay?
+    return insert(it, {adj_it, adj.second});
+  }
 
-    iterator
-    insert(T val)
-    {
-        m_data.insert({val, new node_type{val}});
-        return m_node.insert({m_data[val], cost_type{}});
-    }
+  std::pair<local_iterator, bool>
+  insert(T val, const std::pair<iterator, Cost> &adj)
+  {
+    auto [it, _] = insert(val);
 
-    iterator
-    insert(T val, std::pair<iterator, cost_type> adj)
-    {
-        return insert(val, {adj});
-    }
+    return insert(it, {adj.first, adj.second});
+  }
 
-    // This currently cannot handle adding links if the type T does not exist in m_data, this should probably be improved
-    iterator
-    insert(T val, std::pair<T, cost_type> adj)
-    {
-        return insert(val, {adj});
-    }
+  void
+  insert(T val, std::initializer_list<std::pair<T, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(val, adj);
+  }
 
-    iterator
-    insert(T val, std::initializer_list<std::pair<iterator, cost_type>> init)
-    {
-        return insert(insert(val), init);
-    }
+  void
+  insert(T val, std::initializer_list<std::pair<iterator, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(val, adj);
+  }
 
-    // If a value in the adj list does not yet exist, this won't work, should it auto insert values that don't yet exist in the graph? I think maybe it should
-    iterator
-    insert(T val, std::initializer_list<std::pair<T, cost_type>> init)
-    {
-        auto it = insert(val);
-        for (auto [adj_val, cost] : init)
-            it->first->insert({find(adj_val)->first, cost});
-        return it;
-    }
+  std::pair<local_iterator, bool>
+  insert(iterator pos, std::pair<T, Cost> adj)
+  {
+    auto [adj_it, _] = insert(adj.first);
 
-    // I think the only combo of insert not implemented is an iterator pos with a pair or init list of type T and cost
+    return insert(pos, {adj_it, adj.second});
+  }
 
-    iterator
-    insert(iterator pos, std::pair<iterator, cost_type> adj)
-    {
-        return insert(pos, {adj});
-    }
+  std::pair<local_iterator, bool>
+  insert(iterator pos, const std::pair<iterator, Cost> &adj)
+  {
+    return pos->second.emplace(adj.first->first, adj.second);
+  }
 
-    // At the moment there is no way to make connections to non-existing node, which would then create additional new nodes (it might be good not to include this feature)
-    // What if this val already exists?
-    // cost_type than iterator or vice versa?
+  void
+  insert(iterator pos, std::initializer_list<std::pair<T, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(pos, adj);
+  }
 
-    iterator
-    insert(iterator pos, std::initializer_list<std::pair<iterator, cost_type>> init)
-    {
-        for (auto [adj_it, cost] : init)
-            pos->first->insert({adj_it->first, cost});
+  // This return type follows what insert does for an u_map
+  void
+  insert(iterator pos, std::initializer_list<std::pair<iterator, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(pos, adj);
+  }
 
-        return pos;
-    }
+  /******************************/
 
-    // Normal find is not currently supported because we use node iterators, ideally the graph should be able to use type T as a hash for the unordered_map while pointers are used to nodes where needed, but for the meantime we will need a linear find algorithm
-    // iterator
-    // find(const key_type& key)
-    // {
-    //     return m_node.find(key);
-    // }
+  iterator
+  find(const T &val)
+  {
+    return m_nodes.find(val);
+  }
 
-    // This is quite inefficient (O(N)), ideally we should hash type T and get constant time find but that requires a combined implemntation to use type T and to use pointers to nodes
-    // iterator
-    // find(const T& val)
-    // {
-    //     return std::find_if(begin(), end(), [&](const auto& n)
-    //     {
-    //         return n.first->val == val;
-    //     });
-    // }
+  // const_iterator
+  // find(const T &val) const
+  // {
+  //     return m_node.find(m_data[val]);
+  // }
 
-    iterator
-    find(const T &val)
-    {
-        return m_node.find(m_data[val]);
-    }
+  // FIXME if the T does not exist this seg faults, it should return the end of the local iterator
+  local_iterator
+  find(const T &from, const T &to)
+  {
+    return find(find(from), find(to));
+  }
 
-    const_iterator
-    find(const T &val) const
-    {
-        return m_node.find(m_data[val]);
-    }
+  // const_iterator
+  // find(const T &from, const T &to) const
+  // {
+  //     return find(find(from), find(to));
+  // }
 
-    // This is literally taking node addresses, this is not the best way to do this but is a reasonable workaround for the moment
-    // Ideally this should take a type T
-    iterator
-    find(node_type *key)
-    {
-        return m_node.find(key);
-    }
+  // Find an edge between two nodes
+  local_iterator
+  find(iterator from, iterator to)
+  {
+    return from->second.find(to->first);
+  }
 
-    const_iterator
-    find(node_type *key) const
-    {
-        return m_node.find(key);
-    }
+  // const_iterator
+  // find(const_iterator from, const_iterator to) const
+  // {
+  //     if (auto it = from->first->find(to->first); it != to->first->end())
+  //         return it;
+  //     else
+  //         return end();
+  // }
 
-    iterator
-    find(const T &from, const T &to)
-    {
-        return find(find(from), find(to));
-    }
+  // If node does not exist a new one will be created, I think
+  // Should probs add a const version
 
-    const_iterator
-    find(const T &from, const T &to) const
-    {
-        return find(find(from), find(to));
-    }
+  iterator
+  begin()
+  {
+    return m_nodes.begin();
+  }
 
-    // Find an edge between two nodes
-    iterator
-    find(iterator from, iterator to)
-    {
-        if (auto it = from->first->find(to->first); it != to->first->end())
-            return it;
-        else
-            return end();
-    }
+  // const_iterator
+  // begin() const
+  // {
+  //     return m_node.begin();
+  // }
 
-    const_iterator
-    find(const_iterator from, const_iterator to) const
-    {
-        if (auto it = from->first->find(to->first); it != to->first->end())
-            return it;
-        else
-            return end();
-    }
+  // Begin of adj of a node
+  local_iterator
+  begin(const T &val)
+  {
+    return find(val)->second.begin();
+  }
 
-    // If node does not exist a new one will be created, I think
-    // Should probs add a const version
+  // // Begin of adj of a node
+  // const_iterator
+  // begin(const T &val) const
+  // {
+  //     return find(val)->first->begin();
+  // }
 
-    // GAH have this return cost as well and have it insert if it does not already exist, that way I can do g[#][#].second type stuff
-    // node_type&
-    // operator[](size_type key)
-    // {
-    //     return m_node[key];
-    // }
+  // Begin of adj of a node
+  local_iterator
+  begin(iterator pos)
+  {
+    return pos->second.begin();
+  }
 
-    iterator
-    begin()
-    {
-        return m_node.begin();
-    }
+  // // Begin of adj of a node
+  // const_iterator
+  // begin(const_iterator pos) const
+  // {
+  //     return find(pos)->first->begin();
+  // }
 
-    const_iterator
-    begin() const
-    {
-        return m_node.begin();
-    }
+  iterator
+  end()
+  {
+    return m_nodes.end();
+  }
 
-    // Begin of adj of a node
-    iterator
-    begin(const T &val)
-    {
-        return find(val)->first->begin();
-    }
+  // const_iterator
+  // end() const
+  // {
+  //     return m_node.end();
+  // }
 
-    // Begin of adj of a node
-    const_iterator
-    begin(const T &val) const
-    {
-        return find(val)->first->begin();
-    }
+  // End of adj of a node
+  local_iterator
+  end(const T &val)
+  {
+    return find(val)->second.end();
+  }
 
-    // Begin of adj of a node
-    iterator
-    begin(iterator pos)
-    {
-        return find(pos)->first->begin();
-    }
+  // // End of adj of a node
+  // const_iterator
+  // end(const T &val) const
+  // {
+  //     return find(val)->first->end();
+  // }
 
-    // Begin of adj of a node
-    const_iterator
-    begin(const_iterator pos) const
-    {
-        return find(pos)->first->begin();
-    }
+  // End of adj of a node
+  local_iterator
+  end(iterator pos)
+  {
+    return pos->second.end();
+  }
 
-    iterator
-    end()
-    {
-        return m_node.end();
-    }
+  // // End of adj of a node
+  // const_iterator
+  // end(const_iterator pos) const
+  // {
+  //     return find(pos)->first->end();
+  // }
 
-    const_iterator
-    end() const
-    {
-        return m_node.end();
-    }
+  size_type
+  size() const
+  {
+    return m_nodes.size();
+  }
 
-    // End of adj of a node
-    iterator
-    end(const T &val)
-    {
-        return find(val)->first->end();
-    }
-
-    // End of adj of a node
-    iterator
-    end(const T &val) const
-    {
-        return find(val)->first->end();
-    }
-
-    // End of adj of a node
-    iterator
-    end(iterator pos)
-    {
-        return find(pos)->first->end();
-    }
-
-    // End of adj of a node
-    const_iterator
-    end(const_iterator pos) const
-    {
-        return find(pos)->first->end();
-    }
-
-    size_type
-    size() const
-    {
-        return m_node.size();
-    }
-
-  private:
-    // std::unordered_map<size_type, node_type> m_data{};
-
-    // size_t m_curr_id = 0;
-
-    // std::unordered_map<key_type, node_type*> m_nodes{};
-
-    std::unordered_map<key_type, node_type *> m_data{};
-    node_type m_node{};
-    // size_t m_size{};
+private:
+  graph_type m_nodes{};
 };
 
-template <class T, class Cost>
-bool operator==(Graph<T, Cost> &lhs, Graph<T, Cost> &rhs)
-{
-    for (auto &n : lhs)
-        for (auto &adj : *(n.first))
-            if (auto edge = rhs.find(n.first->val, adj.first->val); edge != rhs.end())
-            {
-                if (adj.second != edge->second)
-                    return false;
-            }
-            else
-                return false;
+// template <class T, class Cost>
+// bool operator==(Graph<T, Cost> &lhs, Graph<T, Cost> &rhs)
+// {
+//     for (auto &n : lhs)
+//         for (auto &adj : *(n.first))
+//             if (auto edge = rhs.find(n.first->val, adj.first->val); edge != rhs.end())
+//             {
+//                 if (adj.second != edge->second)
+//                     return false;
+//             }
+//             else
+//                 return false;
 
-    return true;
-}
+//     return true;
+// }
 
 #endif
