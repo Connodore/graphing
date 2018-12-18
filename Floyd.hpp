@@ -46,7 +46,7 @@ using std::cerr;
 // To use a signature that takes 3 iterators, first, last, and d_first, I need to have custom iterators for the graph implemented, because they are not, to allow partitioning of the graph I will take iterators that are the range of the graph passed in that should be gone over. THIS SHOULD NOT BE IN THE ACTUAL API
 
 // Currently modifies g (yes, I know it says its const)
-template<class T, class GraphIt>
+template <class T, class GraphIt>
 void
 // Graph<T>
 // floyd(const Graph<T> &g)
@@ -57,28 +57,22 @@ floyd(Graph<T> &g, GraphIt first, GraphIt last)
 
     // Graph<T> g{g};
 
-    std::for_each(first, last, [&](auto &k)
-    {
-        std::for_each(first, last, [&](auto &i)
-        {
-            std::for_each(first, last, [&](auto &j)
-            {
-                if (auto ik = g.find(i.first->val, k.first->val); ik != g.end())
-                    if (auto kj = g.find(k.first->val, j.first->val); kj != g.end())
+    // If written with c-style for-loops this is a little cleaner
+    std::for_each(first, last, [&](auto &k) {
+        std::for_each(first, last, [&](auto &i) {
+            std::for_each(first, last, [&](auto &j) {
+                if (auto ik = g.find(i.first, k.first); ik != g.end(i.first))
+                    if (auto kj = g.find(k.first, j.first); kj != g.end(k.first))
                     {
                         // Ideally I want to use the Graph's cost_type here
                         size_t cost = ik->second + kj->second;
-                        if (auto ij = g.find(i.first->val, j.first->val); ij != g.end())
-                        {
-                            if (ij != g.end() && ij->second > cost)
-                                ij->second = cost;
-                        }
+                        if (auto ij = g.find(i.first, j.first); ij != g.end(i.first))
+                            ij->second = std::min(ij->second, cost);
                         else
-                            g.insert(i.first->val, {j.first->val, cost});
+                            g.insert(i.first, {j.first, cost});
                     }
             });
         });
-
     });
 
     // return g;
