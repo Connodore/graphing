@@ -16,7 +16,7 @@ CXX      = g++
 # Use this first configuration for debugging
 #CXXFLAGS := -ggdb -Wall -std=c++14
 # Use the following  configuration for release
-CXXFLAGS := -O3 -g -Wall -Wextra -pedantic -pedantic-errors -std=c++17
+CXXFLAGS := -O3 -g -Wall -pedantic -std=c++17
 
 # Linker: for C++ should be $(CXX)
 LINK     := $(CXX)
@@ -29,7 +29,7 @@ LDPATHS :=
 
 # Libraries we're using, prefaced with "-l".
 #LDLIBS :=
-LDLIBS := -lpthread -lboost_thread -lboost_system
+LDLIBS :=
 
 # Executable name. Needs to be the basename of your driver
 #   file. I.e., your driver must be named $(EXEC).cc
