@@ -1,4 +1,10 @@
 *.o
-*.vscode
 
-main
+.DS_Store
+.vscode
+
+# Links
+CC-Utilities
+
+# Executable
+driver
