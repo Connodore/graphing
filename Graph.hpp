@@ -19,7 +19,7 @@ using std::cerr;
 
 // TODO add ability to define a comparator in the template type to use to compare if a weighted edge is "cheaper" than another (sometimes people may want the heavier edge to be taken so see if that's possible to implement, it might cause infinite cycles though (but would allow for negative cycles))
 
-// Remember to make it very clear that this graph requires unique values
+// Remember to make it very clear that this graph requires unique values (at least for this implementation)
 
 // My graph library should be called Graph++
 
@@ -27,7 +27,7 @@ using std::cerr;
 
 // Type T better be hashable and copyable
 
-// REMEMBER! GRAPH VALUES MUST BE UNIQUE (for this version of the implementation)
+// TODO can I have non-const functions call the const versions, or vice versa (to reduce code duplication)?
 
 // FIXME if we are allow the u_map to be accessible it needs to be const, that cannot just be modified whenever. Parts of my current implementation do rely on this functionality so they will need to be updated (I think it should be pretty easy to convert over though). This needs to be const in the iterator but cannot be const within the class
 
@@ -35,7 +35,6 @@ template <class T, class Cost = size_t>
 class Graph
 {
 public:
-  // Probably should define a const too
   // Should probably have a more readable def than being an unordered map
   // Why typename?
 
@@ -51,6 +50,7 @@ public:
   using iterator = typename graph_type::iterator;
   using const_iterator = typename graph_type::const_iterator;
   using adjacency_iterator = typename adjacency_type::iterator;
+  using const_adjacency_iterator = typename adjacency_type::const_iterator;
 
 public:
   // Add init list constructor that just takes initial values
@@ -87,7 +87,7 @@ public:
   //     });
   // }
 
-  /******************************/
+  /***********************************/
   // Iterators
 
   iterator
@@ -96,14 +96,38 @@ public:
     return m_nodes.begin();
   }
 
+  const_iterator
+  begin() const
+  {
+    return m_nodes.begin();
+  }
+
+  const_iterator
+  cbegin() const
+  {
+    return begin();
+  }
+
   iterator
   end()
   {
     return m_nodes.end();
   }
 
+  const_iterator
+  end() const
+  {
+    return m_nodes.end();
+  }
+
+  const_iterator
+  cend() const
+  {
+    return end();
+  }
+
   // Iterators
-  /******************************/
+  /***********************************/
   // Capacity
 
   bool
@@ -119,8 +143,87 @@ public:
   }
 
   // Capacity
-  /******************************/
+  /***********************************/
   // Adjacency list interface
+
+  /***************/
+  // Iterators
+
+  adjacency_iterator
+  begin(const T &val)
+  {
+    return find(val)->second.begin();
+  }
+
+  const_adjacency_iterator
+  begin(const T &val) const
+  {
+    return find(val)->second.begin();
+  }
+
+  const_adjacency_iterator
+  cbegin(const T &val) const
+  {
+    return begin(val);
+  }
+
+  adjacency_iterator
+  begin(iterator pos)
+  {
+    return pos->second.begin();
+  }
+
+  const_adjacency_iterator
+  begin(iterator pos) const
+  {
+    return pos->second.begin();
+  }
+
+  const_adjacency_iterator
+  cbegin(iterator pos) const
+  {
+    return begin(pos);
+  }
+
+  adjacency_iterator
+  end(const T &val)
+  {
+    return find(val)->second.end();
+  }
+
+  const_adjacency_iterator
+  end(const T &val) const
+  {
+    return find(val)->second.end();
+  }
+
+  const_adjacency_iterator
+  cend(const T &val) const
+  {
+    return end(val);
+  }
+
+  adjacency_iterator
+  end(iterator pos)
+  {
+    return pos->second.end();
+  }
+
+  const_adjacency_iterator
+  end(iterator pos) const
+  {
+    return pos->second.end();
+  }
+
+  const_adjacency_iterator
+  cend(iterator pos) const
+  {
+    return end(pos);
+  }
+
+  // Iterators
+  /***************/
+  // Capacity
 
   bool
   empty(const T &val) const
@@ -146,8 +249,11 @@ public:
     return pos->second.size();
   }
 
+  // Capacity
+  /***************/
+
   // Adjacency list interface
-  /******************************/
+  /***********************************/
 
   std::pair<iterator, bool>
   insert(T val)
@@ -273,74 +379,6 @@ public:
 
   // If node does not exist a new one will be created, I think
   // Should probs add a const version
-
-  // const_iterator
-  // begin() const
-  // {
-  //   return m_node.begin();
-  // }
-
-  // Begin of adj of a node
-  adjacency_iterator
-  begin(const T &val)
-  {
-    return find(val)->second.begin();
-  }
-
-  // // Begin of adj of a node
-  // const_iterator
-  // begin(const T &val) const
-  // {
-  //     return find(val)->first->begin();
-  // }
-
-  // Begin of adj of a node
-  adjacency_iterator
-  begin(iterator pos)
-  {
-    return pos->second.begin();
-  }
-
-  // // Begin of adj of a node
-  // const_iterator
-  // begin(const_iterator pos) const
-  // {
-  //     return find(pos)->first->begin();
-  // }
-
-  // const_iterator
-  // end() const
-  // {
-  //     return m_node.end();
-  // }
-
-  // End of adj of a node
-  adjacency_iterator
-  end(const T &val)
-  {
-    return find(val)->second.end();
-  }
-
-  // // End of adj of a node
-  // const_iterator
-  // end(const T &val) const
-  // {
-  //     return find(val)->first->end();
-  // }
-
-  // End of adj of a node
-  adjacency_iterator
-  end(iterator pos)
-  {
-    return pos->second.end();
-  }
-
-  // // End of adj of a node
-  // const_iterator
-  // end(const_iterator pos) const
-  // {
-  //     return find(pos)->first->end();
-  // }
 
 private:
   graph_type m_nodes{};
