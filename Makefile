@@ -6,6 +6,10 @@
 
 # It'd be nice to have a more generic makefile, also my .gitignore has to ignore 'main' due to the executable build rules, it would be nice to have that removed
 
+
+# TODO This needs to be set up with rules that let me do a normal and test build
+
+
 ########################################################
 # Variable definitions
 ########################################################
@@ -16,7 +20,7 @@ CXX      = g++
 # Use this first configuration for debugging
 #CXXFLAGS := -ggdb -Wall -std=c++14
 # Use the following  configuration for release
-CXXFLAGS := -O3 -g -Wall -pedantic -std=c++17
+CXXFLAGS := -O3 -Wall -pedantic -std=c++17
 
 # Linker: for C++ should be $(CXX)
 LINK     := $(CXX)
@@ -33,7 +37,7 @@ LDLIBS :=
 
 # Executable name. Needs to be the basename of your driver
 #   file. I.e., your driver must be named $(EXEC).cc
-EXEC := main
+EXEC := driver
 
 #############################################################
 # Rules
@@ -44,12 +48,13 @@ EXEC := main
 
 # Add additional object files if you're using more than one
 #   source file.
-$(EXEC) : $(EXEC).o
+$(EXEC) : driver.o tests.o
 	$(LINK) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 # Add rules for each object file
 # No recipes are typically needed
-$(EXEC).o : $(EXEC).cc Graph.hpp Floyd.hpp Node.hpp
+driver.o : driver.cc catch.hpp
+tests.o : tests.cc catch.hpp Graph.hpp
 
 #############################################################
 
