@@ -166,6 +166,36 @@ SCENARIO("Insertions can be done")
 }
 
 /******************************/
+// Iterators
+
+SCENARIO("Iterators work properly")
+{
+    GIVEN("an empty non-const graph")
+    {
+        Graph<int> g{};
+
+        THEN("the begin and end iterator are the same")
+        {
+            REQUIRE(distance(g.begin(), g.end()) == 0);
+            REQUIRE(distance(g.cbegin(), g.cend()) == 0);
+        }
+    }
+    GIVEN("an empty const graph")
+    {
+        const Graph<int> g{};
+
+        THEN("the begin and end iterator are the same")
+        {
+            REQUIRE(distance(g.begin(), g.end()) == 0);
+        }
+    }
+
+    // TODO add in more extensive testing for iterators
+    // TODO add in testing for iterators in the adjacency list interface (these should probably be in their own scenario though). A big thing to test for is what happens if I want to pass a const_iterator in to one of these functions, will it work?
+}
+
+// Iterators
+/******************************/
 // Capacity
 
 SCENARIO("Capacity is correct")
