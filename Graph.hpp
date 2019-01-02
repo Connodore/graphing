@@ -11,9 +11,13 @@
 #include <iostream>
 using std::cerr;
 
-#include "Node.hpp"
+// TODO IMPORTANT: What if we do not make the adj list const, what if instead, if the user wants to add links that's okay as long as they use the type we require (<std::reference_wrapper<const T>, Cost>)? This would allow us to add links in with just using iterators and not needing the whole graph object, additionally this kind of follows how the u_map interface already words since users need to insert a pair type. It might be possible that the type can be deduced by the compiler as well which would make the syntax cleaner. Summary: Let's try keeping the adj list non-const
+
+// Make sure formatting is similar across all files
 
 // TODO setup nonconst versions of methods to rely on const ones, or vice versa (whichever is the proper way, it is outlined in my Effective C++ book)
+
+// TODO add ability to define a comparator in the template type to use to compare if a weighted edge is "cheaper" than another (sometimes people may want the heavier edge to be taken so see if that's possible to implement, it might cause infinite cycles though (but would allow for negative cycles))
 
 // Remember to make it very clear that this graph requires unique values
 
@@ -31,25 +35,25 @@ template <class T, class Cost = size_t>
 class Graph
 {
 public:
-  using size_type = size_t;
   // Probably should define a const too
   // Should probably have a more readable def than being an unordered map
   // Why typename?
-  // using iterator = typename std::unordered_map<key_type, node_type*>::iterator;
-  // using iterator = typename node_type::iterator;
-  // using const_iterator = typename node_type::const_iterator;
 
 private:
-  // using adj_type = std::unordered_map<const T *, Cost>;
-  using adj_type = std::unordered_map<std::reference_wrapper<const T>, Cost, std::hash<T>>;
-  using graph_type = std::unordered_map<T, adj_type>;
+  // using adjacency_type = std::unordered_map<const T *, Cost>;
+  using adjacency_type = std::unordered_map<std::reference_wrapper<const T>, Cost, std::hash<T>>;
+  using graph_type = std::unordered_map<T, adjacency_type>;
 
 public:
+  using size_type = typename graph_type::size_type;
+  using adjacency_size_type = typename adjacency_type::size_type;
+
   using iterator = typename graph_type::iterator;
-  using local_iterator = typename adj_type::iterator;
+  using const_iterator = typename graph_type::const_iterator;
+  using adjacency_iterator = typename adjacency_type::iterator;
 
 public:
-  // Add init list constructor that just takes initial valuessc
+  // Add init list constructor that just takes initial values
 
   // The default value should be move constructed? for every node to save space?
 
@@ -84,14 +88,81 @@ public:
   // }
 
   /******************************/
+  // Iterators
+
+  iterator
+  begin()
+  {
+    return m_nodes.begin();
+  }
+
+  iterator
+  end()
+  {
+    return m_nodes.end();
+  }
+
+  // Iterators
+  /******************************/
+  // Capacity
+
+  bool
+  empty() const
+  {
+    return m_nodes.empty();
+  }
+
+  size_type
+  size() const
+  {
+    return m_nodes.size();
+  }
+
+  // Capacity
+  /******************************/
+  // Adjacency list interface
+
+  bool
+  empty(const T &val) const
+  {
+    return find(val)->second.empty();
+  }
+
+  bool
+  empty(iterator pos) const
+  {
+    return pos->second.empty();
+  }
+
+  adjacency_size_type
+  size(const T &val) const
+  {
+    return find(val)->second.size();
+  }
+
+  adjacency_size_type
+  size(iterator pos) const
+  {
+    return pos->second.size();
+  }
+
+  // Adjacency list interface
+  /******************************/
 
   std::pair<iterator, bool>
   insert(T val)
   {
-    return m_nodes.emplace(val, adj_type{});
+    return m_nodes.emplace(val, adjacency_type{});
   }
 
-  std::pair<local_iterator, bool>
+  void
+  insert(std::initializer_list<T> ilist)
+  {
+    for (const auto &val : ilist)
+      insert(val);
+  }
+
+  std::pair<adjacency_iterator, bool>
   insert(T val, const std::pair<T, Cost> &adj)
   {
     auto [it, _0] = insert(val);
@@ -100,7 +171,7 @@ public:
     return insert(it, {adj_it, adj.second});
   }
 
-  std::pair<local_iterator, bool>
+  std::pair<adjacency_iterator, bool>
   insert(T val, const std::pair<iterator, Cost> &adj)
   {
     auto [it, _] = insert(val);
@@ -122,7 +193,7 @@ public:
       insert(val, adj);
   }
 
-  std::pair<local_iterator, bool>
+  std::pair<adjacency_iterator, bool>
   insert(iterator pos, std::pair<T, Cost> adj)
   {
     auto [adj_it, _] = insert(adj.first);
@@ -130,7 +201,7 @@ public:
     return insert(pos, {adj_it, adj.second});
   }
 
-  std::pair<local_iterator, bool>
+  std::pair<adjacency_iterator, bool>
   insert(iterator pos, const std::pair<iterator, Cost> &adj)
   {
     return pos->second.emplace(adj.first->first, adj.second);
@@ -159,6 +230,12 @@ public:
     return m_nodes.find(val);
   }
 
+  const_iterator
+  find(const T &val) const
+  {
+    return m_nodes.find(val);
+  }
+
   // const_iterator
   // find(const T &val) const
   // {
@@ -166,7 +243,7 @@ public:
   // }
 
   // FIXME if the T does not exist this seg faults, it should return the end of the local iterator
-  local_iterator
+  adjacency_iterator
   find(const T &from, const T &to)
   {
     return find(find(from), find(to));
@@ -179,7 +256,7 @@ public:
   // }
 
   // Find an edge between two nodes
-  local_iterator
+  adjacency_iterator
   find(iterator from, iterator to)
   {
     return from->second.find(to->first);
@@ -197,20 +274,14 @@ public:
   // If node does not exist a new one will be created, I think
   // Should probs add a const version
 
-  iterator
-  begin()
-  {
-    return m_nodes.begin();
-  }
-
   // const_iterator
   // begin() const
   // {
-  //     return m_node.begin();
+  //   return m_node.begin();
   // }
 
   // Begin of adj of a node
-  local_iterator
+  adjacency_iterator
   begin(const T &val)
   {
     return find(val)->second.begin();
@@ -224,7 +295,7 @@ public:
   // }
 
   // Begin of adj of a node
-  local_iterator
+  adjacency_iterator
   begin(iterator pos)
   {
     return pos->second.begin();
@@ -237,12 +308,6 @@ public:
   //     return find(pos)->first->begin();
   // }
 
-  iterator
-  end()
-  {
-    return m_nodes.end();
-  }
-
   // const_iterator
   // end() const
   // {
@@ -250,7 +315,7 @@ public:
   // }
 
   // End of adj of a node
-  local_iterator
+  adjacency_iterator
   end(const T &val)
   {
     return find(val)->second.end();
@@ -264,7 +329,7 @@ public:
   // }
 
   // End of adj of a node
-  local_iterator
+  adjacency_iterator
   end(iterator pos)
   {
     return pos->second.end();
@@ -276,12 +341,6 @@ public:
   // {
   //     return find(pos)->first->end();
   // }
-
-  size_type
-  size() const
-  {
-    return m_nodes.size();
-  }
 
 private:
   graph_type m_nodes{};
