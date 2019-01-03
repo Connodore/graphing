@@ -17,7 +17,7 @@ using std::cerr;
 
 // FIXME I will need to put multiple adjs into an unordered_set as well when I do checks
 
-/**************************/
+/**************************************/
 // I am sure these helper functions could be written better
 
 // for (auto s : gtous(g))
@@ -59,17 +59,22 @@ bool g_is_correct(Graph<T> &g, const std::string &filename)
     return gtous(g) == ftous(filename);
 }
 
-/**************************/
-
-SCENARIO("Default construct a graph")
+Graph<int>
+get_graph()
 {
     Graph<int> g{};
-
-    THEN("the size is 0")
-    {
-        REQUIRE(g.size() == 0);
-    }
+    g.insert(0, {{1, 5}, {2, 1}, {4, 3}});
+    g.insert(1, {3, 2});
+    g.insert(2, {{0, 9}, {1, 7}, {4, 2}});
+    g.insert(3, {1, 8});
+    g.insert(4, {{2, 4}, {6, 9}});
+    g.insert(5, {{1, 7}, {3, 9}, {7, 3}});
+    g.insert(6, {{4, 5}, {5, 1}, {7, 1}});
+    g.insert(7, {0, 2});
+    return g;
 }
+
+/**************************************/
 
 // TODO have a testing scenario that only checks return values?
 SCENARIO("Insertions can be done")
@@ -165,7 +170,54 @@ SCENARIO("Insertions can be done")
     }
 }
 
-/******************************/
+/**************************************/
+// Constructors
+
+SCENARIO("A graph can be constructed")
+{
+    GIVEN("it is default constructed")
+    {
+        Graph<int> g{};
+
+        THEN("the graph is empty")
+        {
+            REQUIRE(g.empty());
+        }
+    }
+
+    GIVEN("it is range constructed")
+    {
+        Graph<int> other{};
+        other.insert({0, 1, 2, 3, 4, 5, 6, 7});
+
+        Graph<int> g{other.begin(), other.end()};
+    }
+
+    GIVEN("it is copy constructed")
+    {
+        Graph<int> other{};
+        other.insert({0, 1, 2, 3, 4, 5, 6, 7});
+
+        Graph<int> g{other};
+
+        THEN("both graphs are the same size")
+        {
+            REQUIRE(g.size() == other.size());
+        }
+        THEN("both graph's adjacency lists match in size")
+        {
+            for (const auto &[val, _] : g)
+                REQUIRE(g.size(val) == other.size(val));
+        }
+        THEN("both graphs are the same")
+        {
+            REQUIRE(g == other);
+        }
+    }
+}
+
+// Constructors
+/**************************************/
 // Iterators
 
 SCENARIO("Iterators work properly")
@@ -189,13 +241,30 @@ SCENARIO("Iterators work properly")
             REQUIRE(distance(g.begin(), g.end()) == 0);
         }
     }
+    GIVEN("a non-empty non-const graph")
+    {
+        Graph<int> g{};
+
+        WHEN("the graph is not connected")
+        {
+            g.insert({0, 1, 2, 3, 4, 5, 6, 7});
+
+            THEN("there is distance between the begin and end iterator")
+            {
+                REQUIRE(distance(g.begin(), g.end()) == 8);
+            }
+        }
+        WHEN("the graph is connected")
+        {
+            // TODO
+        }
+    }
 
     // TODO add in more extensive testing for iterators
-    // TODO add in testing for iterators in the adjacency list interface (these should probably be in their own scenario though). A big thing to test for is what happens if I want to pass a const_iterator in to one of these functions, will it work?
 }
 
 // Iterators
-/******************************/
+/**************************************/
 // Capacity
 
 SCENARIO("Capacity is correct")
@@ -283,4 +352,10 @@ SCENARIO("Capacity is correct")
 }
 
 // Capacity
-/******************************/
+/**************************************/
+// Adjacency list interface
+
+SCENARIO("Adjacency list iterators work properly")
+{
+    // TODO add in testing for iterators in the adjacency list interface. A big thing to test for is what happens if I want to pass a const_iterator in to one of these functions (begin and end), will it work?
+}
