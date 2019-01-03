@@ -44,6 +44,9 @@ private:
   using graph_type = std::unordered_map<T, adjacency_type>;
 
 public:
+  using value_type = T;
+  using adjacency_value_type = std::pair<T, Cost>;
+
   using size_type = typename graph_type::size_type;
   using adjacency_size_type = typename adjacency_type::size_type;
 
@@ -57,23 +60,33 @@ public:
 
   // The default value should be move constructed? for every node to save space?
 
-  // A size constructor does not make much sense for a container that needs unique values
-  Graph(/*size_type size = 0*/)
+  /************************************/
+  // Constructors
+
+  Graph() {}
+
+  template <class InputIt>
+  Graph(InputIt first, InputIt last)
   {
-    // for (size_type s = 0; s < size; ++s)
-    //     insert();
   }
 
-  // This does not actually make a copy
-  // Graph(const Graph& other)
-  // : Graph(other.begin(), other.end())
-  // {}
+  Graph(const Graph &other)
+  {
+    for (const auto &[val, adj] : other.m_nodes)
+    {
+      this->insert(val);
+      for (const auto &[node, cost] : adj)
+        this->insert(val, {node, cost});
+    }
+  }
 
-  // This does not actually make a copy
-  // Graph(const Graph &other)
-  //     : m_data(other.m_data), m_node(other.m_node)
-  // {
-  // }
+  Graph(Graph &&other)
+  {
+  }
+
+  Graph(std::initializer_list<value_type> init)
+  {
+  }
 
   // // This is hard to implement
   // Currently only supports graph iterators, ideally want to support generic iterators (probably InputIt?)
@@ -87,7 +100,8 @@ public:
   //     });
   // }
 
-  /***********************************/
+  // Constructors
+  /************************************/
   // Iterators
 
   iterator
@@ -127,7 +141,7 @@ public:
   }
 
   // Iterators
-  /***********************************/
+  /************************************/
   // Capacity
 
   bool
@@ -143,10 +157,106 @@ public:
   }
 
   // Capacity
-  /***********************************/
+  /************************************/
+  // Modifiers
+
+  std::pair<iterator, bool>
+  insert(T val)
+  {
+    return m_nodes.emplace(val, adjacency_type{});
+  }
+
+  void
+  insert(std::initializer_list<T> ilist)
+  {
+    for (const auto &val : ilist)
+      insert(val);
+  }
+
+  std::pair<adjacency_iterator, bool>
+  insert(T val, const std::pair<T, Cost> &adj)
+  {
+    auto [it, _0] = insert(val);
+    auto [adj_it, _1] = insert(adj.first);
+
+    return insert(it, {adj_it, adj.second});
+  }
+
+  std::pair<adjacency_iterator, bool>
+  insert(T val, const std::pair<iterator, Cost> &adj)
+  {
+    auto [it, _] = insert(val);
+
+    return insert(it, {adj.first, adj.second});
+  }
+
+  void
+  insert(T val, std::initializer_list<std::pair<T, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(val, adj);
+  }
+
+  void
+  insert(T val, std::initializer_list<std::pair<iterator, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(val, adj);
+  }
+
+  std::pair<adjacency_iterator, bool>
+  insert(iterator pos, std::pair<T, Cost> adj)
+  {
+    auto [adj_it, _] = insert(adj.first);
+
+    return insert(pos, {adj_it, adj.second});
+  }
+
+  std::pair<adjacency_iterator, bool>
+  insert(iterator pos, const std::pair<iterator, Cost> &adj)
+  {
+    return pos->second.emplace(adj.first->first, adj.second);
+  }
+
+  void
+  insert(iterator pos, std::initializer_list<std::pair<T, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(pos, adj);
+  }
+
+  // This return type follows what insert does for an u_map
+  void
+  insert(iterator pos, std::initializer_list<std::pair<iterator, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(pos, adj);
+  }
+
+  // Modifiers
+  /************************************/
+  // Lookup
+
+  iterator
+  find(const T &val)
+  {
+    return m_nodes.find(val);
+  }
+
+  const_iterator
+  find(const T &val) const
+  {
+    return m_nodes.find(val);
+  }
+
+  // If node does not exist a new one will be created, I think
+  // Should probs add a const version
+
+  // Lookup
+  /************************************/
   // Adjacency list interface
 
-  /***************/
+  /****************/
   // Iterators
 
   adjacency_iterator
@@ -222,7 +332,7 @@ public:
   }
 
   // Iterators
-  /***************/
+  /****************/
   // Capacity
 
   bool
@@ -250,103 +360,8 @@ public:
   }
 
   // Capacity
-  /***************/
-
-  // Adjacency list interface
-  /***********************************/
-
-  std::pair<iterator, bool>
-  insert(T val)
-  {
-    return m_nodes.emplace(val, adjacency_type{});
-  }
-
-  void
-  insert(std::initializer_list<T> ilist)
-  {
-    for (const auto &val : ilist)
-      insert(val);
-  }
-
-  std::pair<adjacency_iterator, bool>
-  insert(T val, const std::pair<T, Cost> &adj)
-  {
-    auto [it, _0] = insert(val);
-    auto [adj_it, _1] = insert(adj.first);
-
-    return insert(it, {adj_it, adj.second});
-  }
-
-  std::pair<adjacency_iterator, bool>
-  insert(T val, const std::pair<iterator, Cost> &adj)
-  {
-    auto [it, _] = insert(val);
-
-    return insert(it, {adj.first, adj.second});
-  }
-
-  void
-  insert(T val, std::initializer_list<std::pair<T, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(val, adj);
-  }
-
-  void
-  insert(T val, std::initializer_list<std::pair<iterator, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(val, adj);
-  }
-
-  std::pair<adjacency_iterator, bool>
-  insert(iterator pos, std::pair<T, Cost> adj)
-  {
-    auto [adj_it, _] = insert(adj.first);
-
-    return insert(pos, {adj_it, adj.second});
-  }
-
-  std::pair<adjacency_iterator, bool>
-  insert(iterator pos, const std::pair<iterator, Cost> &adj)
-  {
-    return pos->second.emplace(adj.first->first, adj.second);
-  }
-
-  void
-  insert(iterator pos, std::initializer_list<std::pair<T, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(pos, adj);
-  }
-
-  // This return type follows what insert does for an u_map
-  void
-  insert(iterator pos, std::initializer_list<std::pair<iterator, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(pos, adj);
-  }
-
-  /******************************/
-
-  iterator
-  find(const T &val)
-  {
-    return m_nodes.find(val);
-  }
-
-  const_iterator
-  find(const T &val) const
-  {
-    return m_nodes.find(val);
-  }
-
-  // const_iterator
-  // find(const T &val) const
-  // {
-  //     return m_node.find(m_data[val]);
-  // }
+  /****************/
+  // Lookup
 
   // FIXME if the T does not exist this seg faults, it should return the end of the local iterator
   adjacency_iterator
@@ -355,15 +370,20 @@ public:
     return find(find(from), find(to));
   }
 
-  // const_iterator
-  // find(const T &from, const T &to) const
-  // {
-  //     return find(find(from), find(to));
-  // }
+  const_adjacency_iterator
+  find(const T &from, const T &to) const
+  {
+    return find(find(from), find(to));
+  }
 
-  // Find an edge between two nodes
   adjacency_iterator
   find(iterator from, iterator to)
+  {
+    return from->second.find(to->first);
+  }
+
+  const_adjacency_iterator
+  find(iterator from, iterator to) const
   {
     return from->second.find(to->first);
   }
@@ -377,27 +397,44 @@ public:
   //         return end();
   // }
 
-  // If node does not exist a new one will be created, I think
-  // Should probs add a const version
+  // Lookup
+  /****************/
+
+  // Adjacency list interface
+  /************************************/
 
 private:
   graph_type m_nodes{};
 };
 
-// template <class T, class Cost>
-// bool operator==(Graph<T, Cost> &lhs, Graph<T, Cost> &rhs)
-// {
-//     for (auto &n : lhs)
-//         for (auto &adj : *(n.first))
-//             if (auto edge = rhs.find(n.first->val, adj.first->val); edge != rhs.end())
-//             {
-//                 if (adj.second != edge->second)
-//                     return false;
-//             }
-//             else
-//                 return false;
+// Member functions
+/******************************************************************************/
+// Non-member functions
 
-//     return true;
+// TODO I am sure there is an STL algorithm this could be written with
+// FIXME this is causing problems because there is no find that takes 2 const iterators
+// template <class T, class Cost>
+// bool operator==(const Graph<T, Cost> &lhs, const Graph<T, Cost> &rhs)
+// {
+//   for (auto &[val, adj] : lhs)
+//     for (auto [adj_val, cost] : adj)
+//       if (auto edge = rhs.find(val, adj_val); edge != rhs.end(val))
+//       {
+//         if (cost != edge->second)
+//           return false;
+//       }
+//       else
+//         return false;
+//   return true;
 // }
+
+// template <class T, class Cost>
+// bool operator!=(const Graph<T, Cost> &lhs, const Graph<T, Cost> &rhs)
+// {
+//   return !(lhs == rhs);
+// }
+
+// Non-member functions
+/******************************************************************************/
 
 #endif
