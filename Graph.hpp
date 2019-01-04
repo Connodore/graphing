@@ -11,27 +11,22 @@
 #include <iostream>
 using std::cerr;
 
-// TODO IMPORTANT: What if we do not make the adj list const, what if instead, if the user wants to add links that's okay as long as they use the type we require (<std::reference_wrapper<const T>, Cost>)? This would allow us to add links in with just using iterators and not needing the whole graph object, additionally this kind of follows how the u_map interface already words since users need to insert a pair type. It might be possible that the type can be deduced by the compiler as well which would make the syntax cleaner. Summary: Let's try keeping the adj list non-const
-
-// Make sure formatting is similar across all files
-
-// TODO setup nonconst versions of methods to rely on const ones, or vice versa (whichever is the proper way, it is outlined in my Effective C++ book)
-
-// TODO add ability to define a comparator in the template type to use to compare if a weighted edge is "cheaper" than another (sometimes people may want the heavier edge to be taken so see if that's possible to implement, it might cause infinite cycles though (but would allow for negative cycles))
-
-// Remember to make it very clear that this graph requires unique values (at least for this implementation)
-
 // My graph library should be called Graph++
-
-// If the user specifies a unique cost type they must have certain operators implemnted, I think + and +=?
-
 // Type T better be hashable and copyable
 
-// TODO can I have non-const functions call the const versions, or vice versa (to reduce code duplication)?
+// IMPORTANT: What if we do not make the adj list const, what if instead, if the user wants to add links that's okay as long as they use the type we require (<std::reference_wrapper<const T>, Cost>)? This would allow us to add links in with just using iterators and not needing the whole graph object, additionally this kind of follows how the u_map interface already words since users need to insert a pair type. It might be possible that the type can be deduced by the compiler as well which would make the syntax cleaner. Summary: Let's try keeping the adj list non-const
 
-// FIXME if we are allow the u_map to be accessible it needs to be const, that cannot just be modified whenever. Parts of my current implementation do rely on this functionality so they will need to be updated (I think it should be pretty easy to convert over though). This needs to be const in the iterator but cannot be const within the class
+// TODO Make sure formatting is similar across all files
+// TODO setup nonconst versions of methods to rely on const ones, or vice versa (whichever is the proper way, it is outlined in my Effective C++ book)
+// TODO Remember to make it very clear that this graph requires unique values (at least for this implementation)
 
-template <class T, class Cost = size_t>
+// No decision has been made on const_iterator being the only iterator
+// Could write a custom iterator class that extends our u_map iterator and adds an implicit cast to const from non-const
+
+// TODO Pickup after "insert" in the adjacency interface, after that interface is done only the ctor, dtor, and op= need to have skeleton code added
+
+// Take away the default cost type?
+template <class T, class Cost = unsigned long long>
 class Graph
 {
 public:
@@ -44,12 +39,18 @@ private:
   using graph_type = std::unordered_map<T, adjacency_type>;
 
 public:
-  using value_type = T;
-  using adjacency_value_type = std::pair<T, Cost>;
+  using key_type = T;
+  using value_type = const T;
+  using adjacency_value_type = std::pair<const key_type, Cost>;
 
   using size_type = typename graph_type::size_type;
   using adjacency_size_type = typename adjacency_type::size_type;
 
+  using hasher = typename graph_type::hasher;
+  using key_equal = typename graph_type::key_equal;
+
+  using reference = typename graph_type::reference;
+  using const_reference = typename graph_type::const_reference;
   using iterator = typename graph_type::iterator;
   using const_iterator = typename graph_type::const_iterator;
   using adjacency_iterator = typename adjacency_type::iterator;
@@ -160,121 +161,141 @@ public:
   /************************************/
   // Modifiers
 
-  std::pair<iterator, bool>
-  insert(T val)
+  /****************/
+  // Clear
+
+  // TODO write tests for
+  void
+  clear()
   {
-    return m_nodes.emplace(val, adjacency_type{});
+    m_nodes.clear();
   }
 
+  // Clear
+  /****************/
+  // Insert
+
+  std::pair<iterator, bool>
+  insert(const value_type &value)
+  {
+    return m_nodes.emplace(value, adjacency_type{});
+  }
+
+  // TODO
+  // Currently commented out because a test case was trying to call this and it was not defined
+  // std::pair<iterator, bool>
+  // insert(value_type &&value);
+
+  // TODO
+  // Remember, it's a list of value_types
+  template <class InputIt>
   void
-  insert(std::initializer_list<T> ilist)
+  insert(InputIt first, InputIt last);
+
+  // FIXME can call the range insertor using ilist.begin() and end()
+  void
+  insert(std::initializer_list<value_type> ilist)
   {
     for (const auto &val : ilist)
       insert(val);
   }
 
-  std::pair<adjacency_iterator, bool>
-  insert(T val, const std::pair<T, Cost> &adj)
-  {
-    auto [it, _0] = insert(val);
-    auto [adj_it, _1] = insert(adj.first);
+  // Insert
+  /****************/
+  // Emplace
 
-    return insert(it, {adj_it, adj.second});
-  }
+  // TODO
+  template <class... Args>
+  std::pair<iterator, bool>
+  emplace(Args &&... args);
 
-  std::pair<adjacency_iterator, bool>
-  insert(T val, const std::pair<iterator, Cost> &adj)
-  {
-    auto [it, _] = insert(val);
+  // Emplace
+  /****************/
+  // Erase
 
-    return insert(it, {adj.first, adj.second});
-  }
+  // I am not exactly sure how this functionality is going to work yet, since edges have references to a value that needs to be erased
 
+  // TODO
+  iterator
+  erase(const value_type &value);
+
+  // TODO
+  iterator
+  erase(const_iterator pos);
+
+  // TODO
+  iterator
+  erase(const_iterator first, const_iterator last);
+
+  // Erase
+  /****************/
+  // Swap
+
+  // TODO
   void
-  insert(T val, std::initializer_list<std::pair<T, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(val, adj);
-  }
+  swap(Graph &other);
 
-  void
-  insert(T val, std::initializer_list<std::pair<iterator, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(val, adj);
-  }
+  /****************/
 
-  std::pair<adjacency_iterator, bool>
-  insert(iterator pos, std::pair<T, Cost> adj)
-  {
-    auto [adj_it, _] = insert(adj.first);
-
-    return insert(pos, {adj_it, adj.second});
-  }
-
-  std::pair<adjacency_iterator, bool>
-  insert(iterator pos, const std::pair<iterator, Cost> &adj)
-  {
-    return pos->second.emplace(adj.first->first, adj.second);
-  }
-
-  void
-  insert(iterator pos, std::initializer_list<std::pair<T, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(pos, adj);
-  }
-
-  // This return type follows what insert does for an u_map
-  void
-  insert(iterator pos, std::initializer_list<std::pair<iterator, Cost>> ilist)
-  {
-    for (const auto &adj : ilist)
-      insert(pos, adj);
-  }
+  // Might need an extract and merge, I am not exactly sure how to implement those though
 
   // Modifiers
   /************************************/
   // Lookup
 
+  // TODO
+  reference
+  at(const value_type &value);
+
+  // TODO
+  const_reference
+  at(const value_type &value) const;
+
   iterator
-  find(const T &val)
+  find(const value_type &value)
   {
-    return m_nodes.find(val);
+    return m_nodes.find(value);
   }
 
   const_iterator
-  find(const T &val) const
+  find(const value_type &value) const
   {
-    return m_nodes.find(val);
+    return m_nodes.find(value);
   }
 
-  // If node does not exist a new one will be created, I think
-  // Should probs add a const version
+  // TODO Perform tests
+  bool
+  contains(const value_type &value) const
+  {
+    return find(value) != end();
+  }
 
   // Lookup
   /************************************/
   // Adjacency list interface
 
   /****************/
-  // Iterators
+  // Adj. iterators
+
+  /******/
+  // Adj. begin
 
   adjacency_iterator
-  begin(const T &val)
+  begin(const key_type &key)
   {
-    return find(val)->second.begin();
+    return find(key)->second.begin();
   }
 
   const_adjacency_iterator
-  begin(const T &val) const
+  begin(const key_type &key) const
   {
-    return find(val)->second.begin();
+    return find(key)->second.begin();
   }
 
   const_adjacency_iterator
-  cbegin(const T &val) const
+  cbegin(const key_type &key) const
   {
-    return begin(val);
+    return begin(key);
   }
 
   adjacency_iterator
@@ -295,22 +316,26 @@ public:
     return begin(pos);
   }
 
+  // Adj. begin
+  /******/
+  // Adj. end
+
   adjacency_iterator
-  end(const T &val)
+  end(const key_type &key)
   {
-    return find(val)->second.end();
+    return find(key)->second.end();
   }
 
   const_adjacency_iterator
-  end(const T &val) const
+  end(const key_type &key) const
   {
-    return find(val)->second.end();
+    return find(key)->second.end();
   }
 
   const_adjacency_iterator
-  cend(const T &val) const
+  cend(const key_type &key) const
   {
-    return end(val);
+    return end(key);
   }
 
   adjacency_iterator
@@ -331,14 +356,17 @@ public:
     return end(pos);
   }
 
-  // Iterators
+  // Adj. end
+  /******/
+
+  // Adj. iterators
   /****************/
-  // Capacity
+  // Adj. capacity
 
   bool
-  empty(const T &val) const
+  empty(const key_type &key) const
   {
-    return find(val)->second.empty();
+    return find(key)->second.empty();
   }
 
   bool
@@ -348,9 +376,9 @@ public:
   }
 
   adjacency_size_type
-  size(const T &val) const
+  size(const key_type &key) const
   {
-    return find(val)->second.size();
+    return find(key)->second.size();
   }
 
   adjacency_size_type
@@ -359,9 +387,126 @@ public:
     return pos->second.size();
   }
 
-  // Capacity
+  // Adj. capacity
   /****************/
-  // Lookup
+  // Adj. modifiers
+
+  /******/
+  // Adj. clear
+
+  // TODO
+  void
+  clear(const key_type &key);
+
+  // TODO
+  void
+  clear(iterator pos);
+
+  // Adj. clear
+  /******/
+  // Adj. insert
+
+  // If node does not exist a new one will be created, I think
+  // Should probs add a const version
+
+  // Does this overwrite connection costs? Should it?
+
+  std::pair<adjacency_iterator, bool>
+  insert(const key_type &key, const adjacency_value_type &adj_value)
+  {
+    auto [it, _0] = insert(key);
+    auto [adj_it, _1] = insert(adj_value.first);
+
+    return insert(it, {adj_it, adj_value.second});
+  }
+
+  // TODO
+  // Currently commented out because a test is trying to call this and it is not defined
+  // std::pair<adjacency_iterator, bool>
+  // insert(const key_type &key, adjacency_value_type &&adj_value);
+
+  std::pair<adjacency_iterator, bool>
+  insert(const key_type &key, const std::pair<iterator, Cost> &adj)
+  {
+    auto [it, _] = insert(key);
+
+    return insert(it, {adj.first, adj.second});
+  }
+
+  // TODO
+  std::pair<adjacency_iterator, bool>
+  insert(const key_type &key, std::pair<iterator, Cost> &&adj);
+
+  // TODO
+  // Remember this is a range containing adjacency_value_type or std::pair<iterator, Cost>
+  template <class InputIt>
+  void
+  insert(const key_type &key, InputIt first, InputIt last);
+
+  void
+  insert(const key_type &key, std::initializer_list<adjacency_value_type> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(key, adj);
+  }
+
+  void
+  insert(const key_type &key, std::initializer_list<std::pair<iterator, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(key, adj);
+  }
+
+  std::pair<adjacency_iterator, bool>
+  insert(iterator pos, const adjacency_value_type &adj_value)
+  {
+    auto [adj_it, _] = insert(adj_value.first);
+
+    return insert(pos, {adj_it, adj_value.second});
+  }
+
+  // TODO
+  std::pair<adjacency_iterator, bool>
+  insert(iterator pos, adjacency_value_type &&adj_value);
+
+  std::pair<adjacency_iterator, bool>
+  insert(iterator pos, const std::pair<iterator, Cost> &adj)
+  {
+    return pos->second.emplace(adj.first->first, adj.second);
+  }
+
+  // TODO
+  // Currently commented out because a test case is trying to call it
+  // std::pair<adjacency_iterator, bool>
+  // insert(iterator pos, std::pair<iterator, Cost> &&adj);
+
+  // TODO
+  // Remember this range will container adjacency_value_type or std::pair<iterator, bool>
+  template <class InputIt>
+  void
+  insert(iterator pos, InputIt first, InputIt last);
+
+  void
+  insert(iterator pos, std::initializer_list<adjacency_value_type> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(pos, adj);
+  }
+
+  // This return type follows what insert does for an u_map
+  void
+  insert(iterator pos, std::initializer_list<std::pair<iterator, Cost>> ilist)
+  {
+    for (const auto &adj : ilist)
+      insert(pos, adj);
+  }
+
+  // Adj. insert
+  /******/
+
+  // Adj. modifiers
+  /****************/
+  // Adj. lookup
 
   // FIXME if the T does not exist this seg faults, it should return the end of the local iterator
   adjacency_iterator
@@ -397,10 +542,46 @@ public:
   //         return end();
   // }
 
-  // Lookup
+  // Adj. lookup
   /****************/
 
   // Adjacency list interface
+  /************************************/
+  // Hash policy
+
+  // TODO test
+  void
+  rehash(size_type count)
+  {
+    m_nodes.rehash(count);
+  }
+
+  // TODO test
+  void
+  reserve(size_type count)
+  {
+    m_nodes.reserve(count);
+  }
+
+  // Hash policy
+  /************************************/
+  // Observers
+
+  // TODO test
+  hasher
+  hash_function() const
+  {
+    return m_nodes.hash_function();
+  }
+
+  // TODO test
+  key_equal
+  key_eq() const
+  {
+    return m_nodes.key_eq();
+  }
+
+  // Observers
   /************************************/
 
 private:
@@ -428,11 +609,17 @@ private:
 //   return true;
 // }
 
-// template <class T, class Cost>
-// bool operator!=(const Graph<T, Cost> &lhs, const Graph<T, Cost> &rhs)
-// {
-//   return !(lhs == rhs);
-// }
+// TODO
+template <class T, class Cost>
+bool operator!=(const Graph<T, Cost> &lhs, const Graph<T, Cost> &rhs);
+
+// TODO
+template <class T, class Cost>
+void swap(Graph<T, Cost> &lhs, Graph<T, Cost> &rhs);
+
+// TODO
+template <class T, class Cost, class Pred>
+void erase_if(Graph<T, Cost> &c, Pred pred);
 
 // Non-member functions
 /******************************************************************************/
