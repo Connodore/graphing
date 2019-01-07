@@ -23,7 +23,7 @@ using std::cerr;
 // No decision has been made on const_iterator being the only iterator
 // Could write a custom iterator class that extends our u_map iterator and adds an implicit cast to const from non-const
 
-// TODO Pickup after "insert" in the adjacency interface, after that interface is done only the ctor, dtor, and op= need to have skeleton code added
+// Maybe add in rehash and reserve to adj. interface?
 
 // Take away the default cost type?
 template <class T, class Cost = unsigned long long>
@@ -34,7 +34,6 @@ public:
   // Why typename?
 
 private:
-  // using adjacency_type = std::unordered_map<const T *, Cost>;
   using adjacency_type = std::unordered_map<std::reference_wrapper<const T>, Cost, std::hash<T>>;
   using graph_type = std::unordered_map<T, adjacency_type>;
 
@@ -51,24 +50,31 @@ public:
 
   using reference = typename graph_type::reference;
   using const_reference = typename graph_type::const_reference;
+  using adjacency_reference = typename adjacency_type::reference;
+  using const_adjacency_reference = typename adjacency_type::const_reference;
+
   using iterator = typename graph_type::iterator;
   using const_iterator = typename graph_type::const_iterator;
+
   using adjacency_iterator = typename adjacency_type::iterator;
   using const_adjacency_iterator = typename adjacency_type::const_iterator;
 
 public:
-  // Add init list constructor that just takes initial values
-
-  // The default value should be move constructed? for every node to save space?
-
   /************************************/
   // Constructors
 
   Graph() {}
 
+  // Remember it's a container of value_types
   template <class InputIt>
   Graph(InputIt first, InputIt last)
   {
+    std::for_each(first, last, [&](const auto &value) {
+      insert(value.first);
+    });
+
+    for (; first != last; ++first)
+      insert(first->first);
   }
 
   Graph(const Graph &other)
@@ -86,22 +92,30 @@ public:
   }
 
   Graph(std::initializer_list<value_type> init)
+      : Graph(init.begin(), init.end())
   {
   }
 
-  // // This is hard to implement
-  // Currently only supports graph iterators, ideally want to support generic iterators (probably InputIt?)
-  // template<class GraphIt>
-  // Graph(GraphIt first, GraphIt last)
-  // {
-  //     std::for_each(first, last, [&](const auto& other)
-  //     {
-  //         // cerr << "og"other.first->val << std::endl;
-  //         auto it = insert(other.first->val);
-  //     });
-  // }
-
   // Constructors
+  /************************************/
+  // Destructor
+
+  ~Graph() {}
+
+  // Destructor
+  /************************************/
+  // Assignment
+
+  // TODO
+  Graph &operator=(const Graph &other);
+
+  // TODO
+  Graph &operator=(Graph &&other);
+
+  // TODO
+  Graph &operator=(std::initializer_list<value_type> ilist);
+
+  // Assignment
   /************************************/
   // Iterators
 
@@ -243,6 +257,7 @@ public:
   /************************************/
   // Lookup
 
+  // Is this returning a reference to a type that I want const?
   // TODO
   reference
   at(const value_type &value);
@@ -503,20 +518,75 @@ public:
 
   // Adj. insert
   /******/
+  // Adj. emplace
+
+  // TODO
+  template <class... Args>
+  std::pair<adjacency_iterator, bool>
+  emplace(const key_type &key, Args &&... args);
+
+  // TODO
+  template <class... Args>
+  std::pair<adjacency_iterator, bool>
+  emplace(iterator pos, Args &&... args);
+
+  // Adj. emplace
+  /******/
+  // Adj. erase
+
+  // TODO
+  adjacency_iterator
+  erase(const key_type &key, const key_type &adj);
+
+  // TODO
+  adjacency_iterator
+  erase(iterator pos, const key_type &adj);
+
+  // TODO
+  adjacency_iterator
+  erase(const_adjacency_iterator pos);
+
+  // TODO
+  adjacency_iterator
+  erase(const_adjacency_iterator first, const_adjacency_iterator last);
+
+  // Adj. erase
+  /******/
 
   // Adj. modifiers
   /****************/
   // Adj. lookup
 
+  /******/
+  // Adj. at
+
+  adjacency_reference
+  at(const key_type &key, const key_type &adj);
+
+  adjacency_reference
+  at(iterator pos, const key_type &adj);
+
+  const_adjacency_reference
+  at(const key_type &key, const key_type &adj) const;
+
+  const_adjacency_reference
+  at(iterator pos, const key_type &adj) const;
+
+  // Adj. at
+  /******/
+  // Adj. find
+
+  // Currently we are not allowing it->key or key->it finds to keep the api a little simpler
+
   // FIXME if the T does not exist this seg faults, it should return the end of the local iterator
   adjacency_iterator
-  find(const T &from, const T &to)
+  find(const key_type &from, const key_type &to)
   {
     return find(find(from), find(to));
   }
 
   const_adjacency_iterator
-  find(const T &from, const T &to) const
+  find(const key_type &from, const key_type &to) const
   {
     return find(find(from), find(to));
   }
@@ -541,6 +611,20 @@ public:
   //     else
   //         return end();
   // }
+
+  // Adj. find
+  /******/
+  // Adj. contains
+
+  bool
+  contains(const key_type &key, const key_type &adj) const;
+
+  // Does this iterator need to be a const_iterator?
+  bool
+  contains(iterator pos, const key_type &adj) const;
+
+  // Adj. contains
+  /******/
 
   // Adj. lookup
   /****************/
