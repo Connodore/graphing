@@ -33,11 +33,11 @@ std::unordered_set<std::string>
 gtous(Graph<T> &g)
 {
     std::unordered_set<std::string> us{};
-    std::for_each(g.begin(), g.end(), [&](const auto &n) {
+    std::for_each(g.begin(), g.end(), [&](const auto &val) {
         std::stringstream ss{};
 
-        ss << n.first << "|";
-        std::for_each(g.begin(n.first), g.end(n.first), [&](const auto &adj) {
+        ss << val << "|";
+        std::for_each(g.begin(val), g.end(val), [&](const auto &adj) {
             ss << " "
                << "{" << adj.first << "," << adj.second << "}";
         });
@@ -72,6 +72,23 @@ get_graph()
     g.insert(6, {{4, 5}, {5, 1}, {7, 1}});
     g.insert(7, {0, 2});
     return g;
+}
+
+/**************************************/
+// Quick testing
+
+SCENARIO("testing")
+{
+    Graph<int> g = get_graph();
+
+    for (auto it = g.begin(); it != g.end(); ++it)
+    {
+        cerr << *it << "|";
+        std::for_each(g.begin(it), g.end(it), [](const auto &val) {
+            cerr << " {" << val.first << ", " << val.second << "}";
+        });
+        cerr << std::endl;
+    }
 }
 
 /**************************************/
@@ -198,7 +215,7 @@ SCENARIO("A graph can be constructed")
         Graph<int> other{};
         other.insert({0, 1, 2, 3, 4, 5, 6, 7});
 
-        Graph<int> g{other};
+        Graph<int> g = other;
 
         THEN("both graphs are the same size")
         {
@@ -206,7 +223,7 @@ SCENARIO("A graph can be constructed")
         }
         THEN("both graph's adjacency lists match in size")
         {
-            for (const auto &[val, _] : g)
+            for (const auto &val : g)
                 REQUIRE(g.size(val) == other.size(val));
         }
         // TODO Finish operator==
@@ -229,8 +246,8 @@ SCENARIO("Iterators work properly")
 
         THEN("the begin and end iterator are the same")
         {
-            REQUIRE(distance(g.begin(), g.end()) == 0);
-            REQUIRE(distance(g.cbegin(), g.cend()) == 0);
+            REQUIRE(std::distance(g.begin(), g.end()) == 0);
+            REQUIRE(std::distance(g.cbegin(), g.cend()) == 0);
         }
     }
     GIVEN("an empty const graph")
@@ -239,7 +256,7 @@ SCENARIO("Iterators work properly")
 
         THEN("the begin and end iterator are the same")
         {
-            REQUIRE(distance(g.begin(), g.end()) == 0);
+            REQUIRE(std::distance(g.begin(), g.end()) == 0);
         }
     }
     GIVEN("a non-empty non-const graph")
@@ -252,7 +269,7 @@ SCENARIO("Iterators work properly")
 
             THEN("there is distance between the begin and end iterator")
             {
-                REQUIRE(distance(g.begin(), g.end()) == 8);
+                REQUIRE(std::distance(g.begin(), g.end()) == 8);
             }
         }
         WHEN("the graph is connected")
@@ -295,7 +312,7 @@ SCENARIO("Capacity is correct")
         {
             WHEN("the value functions are used")
             {
-                for (const auto &[val, _] : g)
+                for (const auto &val : g)
                 {
                     REQUIRE(g.empty(val));
                     REQUIRE(g.size(val) == 0);
@@ -333,7 +350,7 @@ SCENARIO("Capacity is correct")
         {
             WHEN("the value functions are used")
             {
-                for (const auto &[val, _] : g)
+                for (const auto &val : g)
                 {
                     REQUIRE(!g.empty(val));
                     REQUIRE(g.size(val) != 0);
