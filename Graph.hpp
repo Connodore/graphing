@@ -59,6 +59,12 @@ public:
 public:
   struct GraphIterator
   {
+    using value_type = T;
+    using pointer = value_type *;
+    using reference = const value_type &;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+
     friend class Graph;
 
     GraphIterator() {}
@@ -90,7 +96,7 @@ public:
     GraphIterator
     operator++(int)
     {
-      GraphIterator pre(*this);
+      ConstGraphIterator pre(*this);
       ++m_git;
       return pre;
     }
@@ -114,11 +120,92 @@ public:
       return m_git->second;
     }
 
+    const typename graph_type::mapped_type &
+    adj_list() const
+    {
+      return m_git->second;
+    }
+
     typename graph_type::iterator m_git{};
   };
 
-  using iterator = typename graph_type::iterator;
-  using const_iterator = typename graph_type::const_iterator;
+  // Is there any way to get rid of this duplicate class
+  struct ConstGraphIterator
+  {
+    using value_type = T;
+    using pointer = const value_type *;
+    using reference = const value_type &;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+
+    friend class Graph;
+
+    ConstGraphIterator() {}
+
+    explicit ConstGraphIterator(typename graph_type::const_iterator git)
+        : m_git(git)
+    {
+    }
+
+    ConstGraphIterator(const GraphIterator &other)
+        : m_git(other.m_git)
+    {
+    }
+
+    reference
+    operator*() const
+    {
+      return m_git->first;
+    }
+
+    pointer
+    operator->() const
+    {
+      return &m_git->first;
+    }
+
+    ConstGraphIterator &
+    operator++()
+    {
+      ++m_git;
+      return *this;
+    }
+
+    ConstGraphIterator
+    operator++(int)
+    {
+      ConstGraphIterator pre(*this);
+      ++m_git;
+      return pre;
+    }
+
+    bool
+    operator==(const ConstGraphIterator &other) const
+    {
+      return m_git == other.m_git;
+    }
+
+    bool
+    operator!=(const ConstGraphIterator &other) const
+    {
+      return m_git != other.m_git;
+    }
+
+  private:
+    const typename graph_type::mapped_type &
+    adj_list() const
+    {
+      return m_git->second;
+    }
+
+    typename graph_type::const_iterator m_git{};
+  };
+
+  // using iterator = typename graph_type::iterator;
+  // using const_iterator = typename graph_type::const_iterator;
+
+  using iterator = GraphIterator;
+  using const_iterator = ConstGraphIterator;
 
   using adjacency_iterator = typename adjacency_type::iterator;
   using const_adjacency_iterator = typename adjacency_type::const_iterator;
@@ -133,9 +220,7 @@ public:
   template <class InputIt>
   Graph(InputIt first, InputIt last)
   {
-    std::for_each(first, last, [&](const auto &value) {
-      insert(value.first);
-    });
+    insert(first, last);
   }
 
   Graph(const Graph &other)
@@ -180,44 +265,16 @@ public:
   /************************************/
   // Iterators
 
-  // SPECIAL TESTING BEGIN AND END FOR NEW GRAPHITERATOR
-
-  GraphIterator
-  begin(bool)
-  {
-    return GraphIterator(m_nodes.begin());
-  }
-
-  GraphIterator
-  end(bool)
-  {
-    return GraphIterator(m_nodes.end());
-  }
-
-  adjacency_iterator
-  begin(GraphIterator pos)
-  {
-    return pos.adj_list().begin();
-  }
-
-  adjacency_iterator
-  end(GraphIterator pos)
-  {
-    return pos.adj_list().end();
-  }
-
-  //////////////////////
-
   iterator
   begin()
   {
-    return m_nodes.begin();
+    return iterator(m_nodes.begin());
   }
 
   const_iterator
   begin() const
   {
-    return m_nodes.begin();
+    return const_iterator(m_nodes.begin());
   }
 
   const_iterator
@@ -229,13 +286,13 @@ public:
   iterator
   end()
   {
-    return m_nodes.end();
+    return iterator(m_nodes.end());
   }
 
   const_iterator
   end() const
   {
-    return m_nodes.end();
+    return const_iterator(m_nodes.end());
   }
 
   const_iterator
@@ -281,7 +338,8 @@ public:
   std::pair<iterator, bool>
   insert(const value_type &value)
   {
-    return m_nodes.emplace(value, adjacency_type{});
+    auto [it, inserted] = m_nodes.emplace(value, adjacency_type{});
+    return {iterator(it), inserted};
   }
 
   // TODO
@@ -293,7 +351,12 @@ public:
   // Remember, it's a list of value_types
   template <class InputIt>
   void
-  insert(InputIt first, InputIt last);
+  insert(InputIt first, InputIt last)
+  {
+    std::for_each(first, last, [&](const value_type &value) {
+      insert(value);
+    });
+  }
 
   // FIXME can call the range insertor using ilist.begin() and end()
   void
@@ -358,13 +421,13 @@ public:
   iterator
   find(const value_type &value)
   {
-    return m_nodes.find(value);
+    return iterator(m_nodes.find(value));
   }
 
   const_iterator
   find(const value_type &value) const
   {
-    return m_nodes.find(value);
+    return const_iterator(m_nodes.find(value));
   }
 
   // TODO Perform tests
@@ -387,13 +450,13 @@ public:
   adjacency_iterator
   begin(const key_type &key)
   {
-    return find(key)->second.begin();
+    return find(key).adj_list().begin();
   }
 
   const_adjacency_iterator
   begin(const key_type &key) const
   {
-    return find(key)->second.begin();
+    return find(key).adj_list().begin();
   }
 
   const_adjacency_iterator
@@ -405,13 +468,13 @@ public:
   adjacency_iterator
   begin(iterator pos)
   {
-    return pos->second.begin();
+    return pos.adj_list().begin();
   }
 
   const_adjacency_iterator
   begin(iterator pos) const
   {
-    return pos->second.begin();
+    return pos.adj_list().begin();
   }
 
   const_adjacency_iterator
@@ -427,13 +490,13 @@ public:
   adjacency_iterator
   end(const key_type &key)
   {
-    return find(key)->second.end();
+    return find(key).adj_list().end();
   }
 
   const_adjacency_iterator
   end(const key_type &key) const
   {
-    return find(key)->second.end();
+    return find(key).adj_list().end();
   }
 
   const_adjacency_iterator
@@ -445,13 +508,13 @@ public:
   adjacency_iterator
   end(iterator pos)
   {
-    return pos->second.end();
+    return pos.adj_list().end();
   }
 
   const_adjacency_iterator
   end(iterator pos) const
   {
-    return pos->second.end();
+    return pos.adj_list().end();
   }
 
   const_adjacency_iterator
@@ -470,25 +533,25 @@ public:
   bool
   empty(const key_type &key) const
   {
-    return find(key)->second.empty();
+    return find(key).adj_list().empty();
   }
 
   bool
   empty(iterator pos) const
   {
-    return pos->second.empty();
+    return pos.adj_list().empty();
   }
 
   adjacency_size_type
   size(const key_type &key) const
   {
-    return find(key)->second.size();
+    return find(key).adj_list().size();
   }
 
   adjacency_size_type
   size(iterator pos) const
   {
-    return pos->second.size();
+    return pos.adj_list().size();
   }
 
   // Adj. capacity
@@ -576,7 +639,7 @@ public:
   std::pair<adjacency_iterator, bool>
   insert(iterator pos, const std::pair<iterator, Cost> &adj)
   {
-    return pos->second.emplace(adj.first->first, adj.second);
+    return pos.adj_list().emplace(*adj.first, adj.second);
   }
 
   // TODO
@@ -683,13 +746,13 @@ public:
   adjacency_iterator
   find(iterator from, iterator to)
   {
-    return from->second.find(to->first);
+    return from.adj_list().find(*to);
   }
 
   const_adjacency_iterator
   find(iterator from, iterator to) const
   {
-    return from->second.find(to->first);
+    return from.adj_list().find(*to);
   }
 
   // const_iterator
