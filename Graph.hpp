@@ -29,10 +29,6 @@ using std::cerr;
 template <class T, class Cost = unsigned long long>
 class Graph
 {
-public:
-  // Should probably have a more readable def than being an unordered map
-  // Why typename?
-
 private:
   using adjacency_type = std::unordered_map<std::reference_wrapper<const T>, Cost, std::hash<T>>;
   using graph_type = std::unordered_map<T, adjacency_type>;
@@ -48,10 +44,78 @@ public:
   using hasher = typename graph_type::hasher;
   using key_equal = typename graph_type::key_equal;
 
-  using reference = typename graph_type::reference;
-  using const_reference = typename graph_type::const_reference;
+  // using reference = typename graph_type::reference;
+  // using const_reference = typename graph_type::const_reference;
+
+  using reference = value_type &;
+  using const_reference = value_type &;
+
+  using pointer = value_type *;
+  using const_pointer = value_type *;
+
   using adjacency_reference = typename adjacency_type::reference;
   using const_adjacency_reference = typename adjacency_type::const_reference;
+
+public:
+  struct GraphIterator
+  {
+    friend class Graph;
+
+    GraphIterator() {}
+
+    explicit GraphIterator(typename graph_type::iterator git)
+        : m_git(git)
+    {
+    }
+
+    reference
+    operator*() const
+    {
+      return m_git->first;
+    }
+
+    pointer
+    operator->() const
+    {
+      return &m_git->first;
+    }
+
+    GraphIterator &
+    operator++()
+    {
+      ++m_git;
+      return *this;
+    }
+
+    GraphIterator
+    operator++(int)
+    {
+      GraphIterator pre(*this);
+      ++m_git;
+      return pre;
+    }
+
+    bool
+    operator==(const GraphIterator &other) const
+    {
+      return m_git == other.m_git;
+    }
+
+    bool
+    operator!=(const GraphIterator &other) const
+    {
+      return m_git != other.m_git;
+    }
+
+  private:
+    typename graph_type::mapped_type &
+    adj_list()
+    {
+      return m_git->second;
+    }
+
+    typename graph_type::iterator m_git{};
+  };
 
   using iterator = typename graph_type::iterator;
   using const_iterator = typename graph_type::const_iterator;
@@ -72,9 +136,6 @@ public:
     std::for_each(first, last, [&](const auto &value) {
       insert(value.first);
     });
-
-    for (; first != last; ++first)
-      insert(first->first);
   }
 
   Graph(const Graph &other)
@@ -118,6 +179,34 @@ public:
   // Assignment
   /************************************/
   // Iterators
+
+  // SPECIAL TESTING BEGIN AND END FOR NEW GRAPHITERATOR
+
+  GraphIterator
+  begin(bool)
+  {
+    return GraphIterator(m_nodes.begin());
+  }
+
+  GraphIterator
+  end(bool)
+  {
+    return GraphIterator(m_nodes.end());
+  }
+
+  adjacency_iterator
+  begin(GraphIterator pos)
+  {
+    return pos.adj_list().begin();
+  }
+
+  adjacency_iterator
+  end(GraphIterator pos)
+  {
+    return pos.adj_list().end();
+  }
+
+  //////////////////////
 
   iterator
   begin()
